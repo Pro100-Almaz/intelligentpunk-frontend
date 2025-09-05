@@ -11,6 +11,10 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
 
+  pinia: {
+    storesDirs: ['./stores/**'],
+  },
+
   devtools: {
     enabled: true
   },
@@ -20,6 +24,12 @@ export default defineNuxtConfig({
   routeRules: {
     '/api/**': {
       cors: true
+    }
+  },
+
+  router: {
+    options: {
+      strict: false
     }
   },
 
@@ -37,4 +47,17 @@ export default defineNuxtConfig({
       }
     }
   },
+
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.API_BASE_URL || 'http://127.0.0.1:8000',
+      aiApiBase: process.env.NUXT_PUBLIC_AI_API_BASE || 'http://localhost:8000/api/v1',
+      stripePublishableKey: process.env.NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+      stripePriceStarter: process.env.NUXT_PUBLIC_STRIPE_PRICE_STARTER,
+      stripePricePro: process.env.NUXT_PUBLIC_STRIPE_PRICE_PRO,
+      stripePriceEnterprise: process.env.NUXT_PUBLIC_STRIPE_PRICE_ENTERPRISE
+    }
+  },
+
+  
 })

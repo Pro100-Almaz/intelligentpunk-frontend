@@ -4,20 +4,21 @@
     <Transition name="modal">
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
         @click="closeOnBackdrop"
       >
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+        <div class="absolute inset-0 bg-white/30 backdrop-blur-md"></div>
         
         <!-- Modal Container -->
         <div
           ref="modalRef"
-          class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+          class="relative bg-white rounded-lg shadow-xl
+                 w-full max-w-4xl max-h-screen flex flex-col overflow-hidden"
           @click.stop
         >
           <!-- Header -->
-          <div class="flex items-center justify-between p-6 border-b border-gray-200">
+          <div class="flex-shrink-0 p-6 border-b border-gray-200 flex items-center justify-between">
             <h3 class="text-2xl font-bold text-blue-600">Help Us Improve</h3>
             <button
               @click="closeModal"
@@ -30,7 +31,7 @@
           </div>
 
           <!-- Modal Content -->
-          <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+          <div class="flex-1 overflow-y-auto p-6 space-y-6">
             <!-- Tab Navigation -->
             <div class="flex space-x-1 p-1 bg-gray-100 rounded-lg mb-6">
               <button
@@ -387,8 +388,30 @@ const handleFileUpload = (event) => {
 const submitBugReport = async () => {
   isSubmitting.value = true
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Create FormData for multipart/form-data
+    const formData = new FormData()
+    formData.append('title', bugForm.value.title)
+    formData.append('description', bugForm.value.description)
+    
+    // Add screenshot if selected
+    if (selectedFile.value) {
+      formData.append('screenshot', selectedFile.value)
+    }
+    
+    // Get the base URL from Nuxt config or use default
+    const config = useRuntimeConfig()
+    const baseURL = config.public.apiBase
+
+    console.log(authStore.token)
+    
+    // Send request to API with auth token
+    const response = await $fetch(`${baseURL}/api/feedback/bugs/`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`
+      }
+    })
     
     // Reset form
     bugForm.value = { title: '', description: '' }
@@ -410,8 +433,33 @@ const submitBugReport = async () => {
 const submitToolSuggestion = async () => {
   isSubmitting.value = true
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // Check authentication
+    const { requireAuth } = useAuthGuard()
+    if (!requireAuth('submit tool suggestions')) {
+      closeModal()
+      return
+    }
+    
+    // Get auth token
+    const authStore = useAuthStore()
+    
+    // Get the base URL from Nuxt config or use default
+    const config = useRuntimeConfig()
+    const baseURL = config.public.apiBase
+    
+    // Send request to API with auth token
+    const response = await $fetch(`${baseURL}/api/feedback/tools/`, {
+      method: 'POST',
+      body: {
+        name: toolForm.value.name,
+        category: toolForm.value.category,
+        description: toolForm.value.description
+      },
+      headers: {
+        'Authorization': `Bearer ${authStore.token}`,
+        'Content-Type': 'application/json'
+      }
+    })
     
     // Reset form
     toolForm.value = { name: '', category: 'General', description: '' }
@@ -429,12 +477,40 @@ const submitToolSuggestion = async () => {
   }
 }
 
-const voteForIdea = (ideaId) => {
+const voteForIdea = async (ideaId) => {
   if (!votedIdeas.value.includes(ideaId)) {
-    votedIdeas.value.push(ideaId)
-    const idea = ideas.value.find(i => i.id === ideaId)
-    if (idea) {
-      idea.votes++
+    try {
+      // Check authentication
+      const { requireAuth } = useAuthGuard()
+      if (!requireAuth('vote for ideas')) {
+        return
+      }
+      
+      // Get auth token
+      const authStore = useAuthStore()
+      
+      // Get the base URL from Nuxt config or use default
+      const config = useRuntimeConfig()
+      const baseURL = config.public.apiBase || 'http://127.0.0.1:8000'
+      
+      // Send vote to API with auth token
+      await $fetch(`${baseURL}/api/feedback/ideas/${ideaId}/vote/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authStore.token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      // Update local state
+      votedIdeas.value.push(ideaId)
+      const idea = ideas.value.find(i => i.id === ideaId)
+      if (idea) {
+        idea.votes++
+      }
+    } catch (error) {
+      console.error('Error voting for idea:', error)
+      alert('Error voting for idea. Please try again.')
     }
   }
 }

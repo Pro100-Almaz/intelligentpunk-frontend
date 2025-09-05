@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useRoute, navigateTo } from '#app'
+import { useAuth } from '~/composables/useAuth'
+
 definePageMeta({
   layout: false
 })
@@ -15,6 +18,10 @@ const form = ref({
 
 const loading = ref(false)
 const errors = ref<Record<string, string>>({})
+const showPassword = ref(false)
+const toggleShowPassword = () => {
+  showPassword.value = !showPassword.value
+}
 
 const validateForm = () => {
   errors.value = {}
@@ -35,43 +42,23 @@ const validateForm = () => {
 }
 
 const handleLogin = async () => {
-  if (!validateForm()) {
-    return
-  }
-  
+  if (!validateForm()) return
+
   loading.value = true
-  
   try {
     const result = await login({
       email: form.value.email,
       password: form.value.password,
       remember: form.value.remember
     })
-    
+
     if (result.success) {
-      toast.add({
-        title: 'Login successful',
-        description: 'Welcome back!',
-        color: 'success'
-      })
-      
-      // Redirect to intended page or dashboard
-      const redirectTo = route.query.redirect as string || '/'
-      await navigateTo(redirectTo)
+      toast.add({ title: 'Login successful', color: 'success' })
     } else {
-      toast.add({
-        title: 'Login failed',
-        description: 'Invalid email or password. Please try again.',
-        color: 'error'
-      })
+      toast.add({ title: 'Login failed', color: 'error' })
     }
-    
-  } catch (error) {
-    toast.add({
-      title: 'Login failed',
-      description: 'An unexpected error occurred. Please try again.',
-      color: 'error'
-    })
+  } catch {
+    toast.add({ title: 'Login failed', color: 'error' })
   } finally {
     loading.value = false
   }
@@ -134,14 +121,25 @@ const handleSignUp = () => {
             <UInput
               id="password"
               v-model="form.password"
-              type="password"
+              :type="showPassword ? 'text' : 'password'"
               placeholder="Enter your password"
               class="w-full"
               :ui="{ 
                 base: 'relative block w-full disabled:cursor-not-allowed disabled:opacity-75 focus:outline-none border-0 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 placeholder:text-gray-400 focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:ring-inset dark:placeholder:text-gray-500 sm:text-sm sm:leading-6 rounded-lg'
               }"
               :disabled="loading"
-            />
+            >
+              <template #trailing>
+                <button
+                  type="button"
+                  class="px-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  @click="toggleShowPassword"
+                  aria-label="Toggle password visibility"
+                >
+                  <UIcon :name="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'" class="w-4 h-4" />
+                </button>
+              </template>
+            </UInput>
             <p v-if="errors.password" class="text-sm text-red-600 dark:text-red-400">
               {{ errors.password }}
             </p>

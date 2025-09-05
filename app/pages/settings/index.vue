@@ -2,6 +2,13 @@
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 
+// Apply auth middleware
+definePageMeta({
+  layout: 'default',
+  middleware: 'auth',
+  requiresAuth: true,
+})
+
 const fileRef = ref<HTMLInputElement>()
 
 const profileSchema = z.object({

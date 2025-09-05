@@ -4,6 +4,13 @@ import { upperFirst } from 'scule'
 import { getPaginationRowModel, type Row } from '@tanstack/table-core'
 import type { User } from '~/types'
 
+// Apply auth middleware
+definePageMeta({
+  layout: 'default',
+  middleware: 'auth',
+  requiresAuth: true,
+})
+
 const UAvatar = resolveComponent('UAvatar')
 const UButton = resolveComponent('UButton')
 const UBadge = resolveComponent('UBadge')

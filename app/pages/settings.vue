@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
+definePageMeta({ middleware: 'auth', requiresAuth: true })
 
 const links = [[{
   label: 'General',

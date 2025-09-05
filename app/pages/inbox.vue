@@ -3,6 +3,13 @@ import { computed, ref, watch } from 'vue'
 import { breakpointsTailwind } from '@vueuse/core'
 import type { Mail } from '~/types'
 
+// Apply auth middleware
+definePageMeta({
+  layout: 'default',
+  middleware: 'auth',
+  requiresAuth: true,
+})
+
 const tabItems = [{
   label: 'All',
   value: 'all'
