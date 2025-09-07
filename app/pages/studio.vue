@@ -120,16 +120,16 @@
                 <!-- Actions -->
                 <div class="w-full flex justify-between items-center mt-2">
                   <!-- Left plus button -->
-                  <button class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200">
-                    <span class="text-xl">+</span>
+                  <button class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200">
+                    <span class="text-2xl text-gray-500">+</span>
                   </button>
 
                   <!-- Right submit button -->
                   <div class="flex items-center space-x-2">
-                    <span class="text-gray-500">New Chat</span>
+                    <span class="text-gray-700 text-xs">New Chat</span>
                     <button @click="handleSend" :disabled="isLoading"
-                      class="flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
-                      ↑
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
+                      <UIcon name="i-lucide-arrow-up" class="text-gray-500" size="2xl"/>
                     </button>
                   </div>
                 </div>
