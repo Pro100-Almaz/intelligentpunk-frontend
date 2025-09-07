@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useRuntimeConfig } from '#app'
 
+
 export interface ChatMessage {
   id: string
   role: 'user' | 'assistant' | 'system'
@@ -43,14 +44,13 @@ export const useAI = () => {
     }
     messages.value.push(userMessage)
 
-    // Prepare request
     const requestBody: ChatRequest = {
-      model: 'openai:gpt-4o-mini', // Using OpenAI model through the gateway
+      model: 'openai:gpt-4o-mini',
       messages: messages.value.map(m => ({
         role: m.role,
         content: m.content
       })),
-      temperature: 0.7,
+      temperature: 0.3,
       max_tokens: 2000,
       stream: stream
     }
@@ -58,6 +58,7 @@ export const useAI = () => {
     try {
       if (stream) {
         // Handle streaming response
+        console.log('Sending streaming request to AI API...')
         const response = await fetch(`${apiBase}/messages/`, {
           method: 'POST',
           headers: {
