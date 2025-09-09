@@ -32,13 +32,12 @@
           </UButton>
         </div>
         <div>
-          <h3 class="text-sm text-gray-400 mb-3">History</h3>
+          <h3 class="text-sm text-gray-600 mb-3">History</h3>
           <div class="space-y-1 text-xs text-gray-500">
             <div v-for="chat in chats" :key="chat.id">
-              <UButton variant="ghost" size="xs" class="w-full justify-start gap-x-2"
-                @click="handleLoadChat(chat.id)">
-                <UIcon name="i-lucide-message-circle" class="text-gray-400" />
-                <span class="truncate">{{ chat.title || 'New Chat' }}</span>
+              <UButton variant="ghost" size="xs" class="w-full justify-start gap-x-2" @click="handleLoadChat(chat.id)">
+                <UIcon name="i-lucide-message-circle" class="text-gray-400 shrink-0 w-4 h-4" />
+                <span class="truncate text-xs text-gray-500">{{ chat.title || 'New Chat' }}</span>
               </UButton>
             </div>
           </div>
@@ -79,13 +78,13 @@
           <div class="flex-1 min-h-0 overflow-y-auto">
             <ClientOnly>
               <UChatMessages v-if="messages.length" :messages="messages" auto-scroll-icon="i-lucide-chevron-down"
-                :should-scroll-to-bottom="true" class="min-h-full">
+                :should-scroll-to-bottom="false" :auto-scroll="false" class="min-h-full">
                 <template #content="{ message }">
                   <div class="prose prose-sm max-w-none p-2 px-3 rounded-lg"
                     :class="message.role === 'user' ? 'bg-white text-black' : 'bg-gray-100 text-gray-900'">
-                    <span class="whitespace-pre-wrap">
-                      {{ message.content }}
-                    </span>
+                    <div class="prose prose-sm max-w-none p-2 px-3 rounded-lg"
+                      :class="message.role === 'user' ? 'bg-white text-black' : 'bg-gray-100 text-gray-900'"
+                      v-html="renderMarkdown(message.content)"></div>
                   </div>
                 </template>
               </UChatMessages>
@@ -129,10 +128,10 @@
 
                   <!-- Right submit button -->
                   <div class="flex items-center space-x-2">
-                    <span class="text-gray-700 text-xs">New Chat</span>
+                    <span class="text-gray-700 text-xs">New Message</span>
                     <button @click="handleSend" :disabled="isLoading"
                       class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
-                      <UIcon name="i-lucide-arrow-up" class="text-gray-500" size="2xl"/>
+                      <UIcon name="i-lucide-arrow-up" class="text-gray-500" size="2xl" />
                     </button>
                   </div>
                 </div>
