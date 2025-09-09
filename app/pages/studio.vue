@@ -35,7 +35,8 @@
           <h3 class="text-sm text-gray-400 mb-3">History</h3>
           <div class="space-y-1 text-xs text-gray-500">
             <div v-for="chat in chats" :key="chat.id">
-              <UButton variant="ghost" size="xs" class="w-full justify-start gap-x-2">
+              <UButton variant="ghost" size="xs" class="w-full justify-start gap-x-2"
+                @click="handleLoadChat(chat.id)">
                 <UIcon name="i-lucide-message-circle" class="text-gray-400" />
                 <span class="truncate">{{ chat.title || 'New Chat' }}</span>
               </UButton>
@@ -183,7 +184,7 @@ definePageMeta({ layout: 'studio' })
 import { ref, onMounted } from 'vue'
 import { useAI } from '~/composables/useAI'
 
-const { chats, messages, isLoading, error, sendMessage, clearMessages, getHistory } = useAI()
+const { chats, messages, isLoading, error, sendMessage, clearMessages, getHistory, loadChat } = useAI()
 const input = ref('')
 const useStreaming = ref(true) // Toggle for streaming vs non-streaming responses
 
@@ -200,6 +201,10 @@ async function handleSend() {
 
 function handleNewSession() {
   clearMessages()
+}
+
+async function handleLoadChat(chatId: string) {
+  await loadChat(chatId)
 }
 
 function handleSuggestedPrompt(prompt: string) {

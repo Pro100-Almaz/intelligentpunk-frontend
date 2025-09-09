@@ -18,6 +18,7 @@ export interface ChatRequest {
   temperature?: number
   max_tokens?: number
   stream?: boolean
+  conversation_id?: string
 }
 
 export const useAI = () => {
@@ -27,6 +28,7 @@ export const useAI = () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const currentStreamingMessage = ref<string>('')
+  const currentConversationId = ref<string | null>(null)
 
   // Use configuration for the response-generator service
   const apiBase = config.public.aiApiBase
@@ -53,7 +55,8 @@ export const useAI = () => {
       })),
       temperature: 0.3,
       max_tokens: 2000,
-      stream
+      stream,
+      conversation_id: currentConversationId.value || undefined
     }
   
     try {
@@ -105,6 +108,9 @@ export const useAI = () => {
   
             try {
               const chunk = JSON.parse(jsonStr)
+              if (!currentConversationId.value && chunk.conversation_id) {
+                currentConversationId.value = chunk.conversation_id
+              }
               if (chunk.delta) {
                 const msg = messages.value[assistantIndex]
                 if (msg) {
@@ -132,6 +138,9 @@ export const useAI = () => {
         if (!response.ok) throw new Error(`API error: ${response.status}`)
   
         const data = await response.json()
+        if (!currentConversationId.value && data.conversation_id) {
+          currentConversationId.value = data.conversation_id
+        }
   
         const assistantMessage: ChatMessage = {
           id: data.id || Date.now().toString(),
@@ -176,10 +185,47 @@ export const useAI = () => {
   const clearMessages = () => {
     messages.value = []
     error.value = null
+    currentConversationId.value = null
   }
 
   const removeMessage = (id: string) => {
     messages.value = messages.value.filter(m => m.id !== id)
+  }
+
+  const loadChat = async (conversationId: string) => {
+    try {
+      const response = await fetch(`${apiBase}/conversations/${conversationId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': 'local-dev-key-123'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+
+      // Clear current messages and set the conversation ID
+      messages.value = []
+      currentConversationId.value = conversationId
+
+      // Load messages from the conversation
+      if (data.messages && data.messages.length > 0) {
+        messages.value = data.messages.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          created: Math.floor(new Date(msg.created_at).getTime() / 1000)
+        }))
+      }
+
+    } catch (err: any) {
+      console.error('AI API Load Chat Error:', err)
+      error.value = err.message || 'Failed to load chat'
+    }
   }
 
   return {
@@ -188,9 +234,11 @@ export const useAI = () => {
     isLoading: computed(() => isLoading.value),
     error: computed(() => error.value),
     currentStreamingMessage: computed(() => currentStreamingMessage.value),
+    currentConversationId: computed(() => currentConversationId.value),
     sendMessage,
     clearMessages,
     removeMessage,
-    getHistory
+    getHistory,
+    loadChat
   }
 }
