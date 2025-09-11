@@ -10,42 +10,42 @@
         </div>
       </div>
 
-      <!-- Navigation -->
-      <div class="flex-1 p-4 space-y-4">
-        <div class="space-y-2">
+      <!-- Navigation + History (scrollable area) -->
+      <div class="flex-1 flex flex-col min-h-0 p-4 space-y-4">
+        <!-- Static Navigation -->
+        <div class="space-y-2 shrink-0">
           <UButton icon="i-lucide-home" variant="ghost" size="xs" class="w-full justify-start gap-x-2"
             @click="navigateTo('/')">
             <p class="text-xs">Go to Dashboard</p>
           </UButton>
-
           <UButton icon="i-lucide-folder" variant="ghost" size="xs" class="w-full justify-start gap-x-2">
             <p class="text-xs">Open Assets</p>
           </UButton>
-
           <UButton icon="i-lucide-git-branch" variant="ghost" size="xs" class="w-full justify-start gap-x-2">
             <p class="text-xs">Discover Workflows</p>
           </UButton>
-
           <UButton icon="i-lucide-pencil" variant="ghost" size="xs" class="w-full justify-start gap-x-2"
             @click="handleNewSession">
             <p class="text-xs">New Session</p>
           </UButton>
         </div>
-        <div>
-          <h3 class="text-sm text-gray-600 mb-3">History</h3>
-          <div class="space-y-1 text-xs text-gray-500">
+
+        <!-- History (scrollable) -->
+        <div class="flex-1 min-h-0 overflow-y-auto">
+          <h3 class="text-sm mb-3 text-black">History</h3>
+          <div class="space-y-1 text-xs">
             <div v-for="chat in chats" :key="chat.id">
-              <UButton variant="ghost" size="xs" class="w-full justify-start gap-x-2" @click="handleLoadChat(chat.id)">
-                <UIcon name="i-lucide-message-circle" class="text-gray-400 shrink-0 w-4 h-4" />
-                <span class="truncate text-xs text-gray-500">{{ chat.title || 'New Chat' }}</span>
+              <UButton variant="ghost" size="xs" class="w-full justify-start gap-x-2" @click="handleLoadChat(chat)">
+                <UIcon name="i-lucide-message-circle" class="shrink-0 w-4 h-4 text-black" />
+                <span class="truncate text-xs text-black">{{ chat.title || 'New Chat' }}</span>
               </UButton>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Bottom -->
-      <div class="p-4 border-t border-gray-200">
+      <!-- Bottom section (fixed) -->
+      <div class="p-4 border-t border-gray-200 shrink-0">
         <div class="flex items-center gap-2 mb-3">
           <div class="w-6 h-6 bg-green-300 rounded"></div>
           <div>
@@ -61,7 +61,7 @@
     <div class="flex-1 flex flex-col">
       <!-- Top bar -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200">
-        <h1 class="text-lg font-semibold">Dynamic Sneaker Showcase</h1>
+        <h1 class="text-lg font-semibold">{{ chatTitle }}</h1>
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <div class="w-6 h-6 bg-yellow-400 rounded-full"></div>
@@ -74,25 +74,25 @@
       <!-- Scrollable chat area that fits the viewport -->
       <div class="flex-1 min-h-0 overflow-hidden">
         <div class="h-full max-w-3xl mx-auto flex flex-col gap-2 px-4">
-          <!-- This is the actual scroller -->
-          <div class="flex-1 min-h-0 overflow-y-auto">
+          <div ref="chatContainer"  class="flex-1 min-h-0 overflow-y-auto">
             <ClientOnly>
               <UChatMessages v-if="messages.length" :messages="messages" auto-scroll-icon="i-lucide-chevron-down"
-                :should-scroll-to-bottom="false" :auto-scroll="false" class="min-h-full">
+                class="min-h-full" should-auto-scroll :auto-scroll="false">
                 <template #content="{ message }">
                   <div class="prose prose-sm max-w-none p-2 px-3 rounded-lg"
                     :class="message.role === 'user' ? 'bg-white text-black' : 'bg-gray-100 text-gray-900'">
-                    <div class="prose prose-sm max-w-none p-2 px-3 rounded-lg"
-                      :class="message.role === 'user' ? 'bg-white text-black' : 'bg-gray-100 text-gray-900'"
-                      v-html="renderMarkdown(message.content)"></div>
+
+                    <!-- If this is an assistant message AND loading is in progress, show the AI thinking loader -->
+                    <div v-if="message.role === 'assistant' && isLoading" class="flex items-center gap-2 text-gray-500">
+                      <UIcon name="i-lucide-loader-2" class="animate-spin" />
+                      <span>AI is thinking...</span>
+                    </div>
+
+                    <!-- Otherwise render the message content -->
+                    <div v-else v-html="renderMarkdown(message.content)"></div>
                   </div>
                 </template>
               </UChatMessages>
-
-              <div v-if="isLoading" class="flex items-center gap-2 p-4 text-gray-500">
-                <UIcon name="i-lucide-loader-2" class="animate-spin" />
-                <span>AI is thinking...</span>
-              </div>
 
               <div v-if="error" class="p-4 bg-red-50 text-red-600 rounded-lg m-4">
                 <div class="flex items-center gap-2">
@@ -110,6 +110,13 @@
           </div>
 
           <div>
+            <div class="flex justify-center mb-2">
+              <button v-if="messages.length && !isAtBottom" @click="scrollToBottom()"
+                class="flex items-center bg-white border border-gray-300 hover:bg-gray-300 text-gray-700 p-2 pb-1 rounded-full shadow-md">
+                <UIcon name="i-lucide-chevron-down" class="w-5 h-5" />
+              </button>
+            </div>
+
             <div class="flex items-center rounded-2xl shadow-sm">
               <!-- Input Box -->
               <div class="flex flex-col w-full bg-white rounded-xl shadow p-4">
@@ -182,7 +189,8 @@
 definePageMeta({ layout: 'studio' })
 import { ref, onMounted } from 'vue'
 import { useAI } from '~/composables/useAI'
-
+const isAtBottom = ref(true)
+const chatTitle = ref('New Chat');
 const { chats, messages, isLoading, error, sendMessage, clearMessages, getHistory, loadChat } = useAI()
 const input = ref('')
 const useStreaming = ref(true) // Toggle for streaming vs non-streaming responses
@@ -193,17 +201,36 @@ async function handleSend() {
   const message = input.value
   input.value = ''
 
-  // Send message to AI service
   await sendMessage(message, useStreaming.value)
   await getHistory(); // Refresh chat history after sending a message
 }
 
 function handleNewSession() {
   clearMessages()
+  chatTitle.value = 'New Chat';
 }
 
-async function handleLoadChat(chatId: string) {
-  await loadChat(chatId)
+const chatContainer = ref<HTMLElement | null>(null)
+
+function scrollToBottom(smooth = true) {
+  if (chatContainer.value) {
+    chatContainer.value.scrollTo({
+      top: chatContainer.value.scrollHeight,
+      behavior: smooth ? 'smooth' : 'auto'
+    })
+    isAtBottom.value = true
+  }
+}
+function handleScroll() {
+  if (!chatContainer.value) return
+
+  const { scrollTop, scrollHeight, clientHeight } = chatContainer.value
+  // If user is within 50px of bottom → considered "at bottom"
+  isAtBottom.value = scrollTop + clientHeight >= scrollHeight - 50
+}
+async function handleLoadChat(chat: { id: string, title: string }) {
+  await loadChat(chat.id)
+  chatTitle.value = chat.title || '';
 }
 
 function handleSuggestedPrompt(prompt: string) {
@@ -214,5 +241,36 @@ function handleSuggestedPrompt(prompt: string) {
 // Initialize with a welcome message
 onMounted(() => {
   getHistory();
+  if (chatContainer.value) {
+    chatContainer.value.addEventListener('scroll', handleScroll)
+  }
 })
 </script>
+<style scoped>
+/* Apply to all scrollable elements */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  /* optional */
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.4);
+  /* gray thumb */
+  border-radius: 9999px;
+  /* fully rounded */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
+}
+</style>
