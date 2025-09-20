@@ -3,11 +3,7 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.12.4",
-  "engines": {
-    "node": "20.x"
-  },
   "scripts": {
-    "postinstall": "pnpm rebuild better-sqlite3",
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
@@ -30,7 +26,6 @@
     "@unovis/ts": "^1.5.2",
     "@unovis/vue": "^1.5.2",
     "@vueuse/nuxt": "^13.4.0",
-    "better-sqlite3": "^12.2.0",
     "date-fns": "^4.1.0",
     "markdown-it": "^14.1.0",
     "nuxt": "^3.17.6",
