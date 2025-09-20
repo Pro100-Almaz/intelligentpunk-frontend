@@ -1,11 +1,9 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  nitro: { preset: 'vercel-edge' },
-  nitro: {
-    storage: {
-      // app-wide cache or kv-like storage: pick memory or fs (fs is read-only at runtime on Vercel)
-      cache: { driver: 'memory' },
-      // any other custom mounts you use should also be memory/redis/http/vercelKV/libsql, etc.
+  nitro: { preset: 'vercel' },           // Node/Serverless
+  content: {
+    experimental: {
+      sqliteConnector: 'better-sqlite3'
     }
   },
   modules: [

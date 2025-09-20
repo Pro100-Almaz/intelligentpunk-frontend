@@ -4,6 +4,7 @@
   "type": "module",
   "packageManager": "pnpm@10.12.4",
   "scripts": {
+    "postinstall": "pnpm rebuild better-sqlite3",
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.4.1",
     "@types/markdown-it": "^14.1.2",
+    "better-sqlite3": "^12.2.0",
     "eslint": "^9.30.0",
     "typescript": "^5.8.3",
     "vue-tsc": "^2.2.10"
