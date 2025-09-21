@@ -185,11 +185,11 @@ import ForYouCard from '~/components/marketplace/ForYouCard.vue'
 import QuickActionCard from '~/components/marketplace/QuickActionCard.vue'
 import ToolGridSection from '~/components/marketplace/ToolGridSection.vue'
 
-definePageMeta({
-  layout: 'default',
-  middleware: 'auth',
-  requiresAuth: true
-})
+// definePageMeta({
+//   layout: 'default',
+//   middleware: 'auth',
+//   requiresAuth: true
+// })
 
 const { isNotificationsSlideoverOpen } = useDashboard()
 
