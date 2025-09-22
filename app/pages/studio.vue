@@ -14,17 +14,17 @@
       <div class="flex-1 flex flex-col min-h-0 p-4 space-y-4">
         <!-- Static Navigation -->
         <div class="space-y-2 shrink-0">
-          <UButton icon="i-lucide-home" variant="ghost" size="xs" class="w-full justify-start gap-x-2"
+          <UButton icon="i-lucide-home" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black"
             @click="navigateTo('/')">
             <p class="text-xs">Go to Dashboard</p>
           </UButton>
-          <UButton icon="i-lucide-folder" variant="ghost" size="xs" class="w-full justify-start gap-x-2">
+          <UButton icon="i-lucide-folder" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black">
             <p class="text-xs">Open Assets</p>
           </UButton>
-          <UButton icon="i-lucide-git-branch" variant="ghost" size="xs" class="w-full justify-start gap-x-2">
+          <UButton icon="i-lucide-git-branch" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black">
             <p class="text-xs">Discover Workflows</p>
           </UButton>
-          <UButton icon="i-lucide-pencil" variant="ghost" size="xs" class="w-full justify-start gap-x-2"
+          <UButton icon="i-lucide-pencil" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black"
             @click="handleNewSession">
             <p class="text-xs">New Session</p>
           </UButton>
