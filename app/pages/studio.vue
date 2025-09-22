@@ -77,10 +77,10 @@
           <div ref="chatContainer"  class="flex-1 min-h-0 overflow-y-auto">
             <ClientOnly>
               <UChatMessages v-if="messages.length" :messages="messages" auto-scroll-icon="i-lucide-chevron-down"
-                class="min-h-full" should-auto-scroll :auto-scroll="false">
+                class="min-h-full" should-auto-scroll :auto-scroll="false" :user="{ variant: 'solid'}" :assistant="{ variant: 'solid' }">
                 <template #content="{ message }">
-                  <div class="prose prose-sm max-w-none p-2 px-3 rounded-lg"
-                    :class="message.role === 'user' ? 'bg-white text-black' : 'bg-gray-100 text-gray-900'">
+                  <div class="prose prose-sm max-w-none bg-white rounded-lg"
+                    :class="message.role === 'user' ? 'bg-white text-black' : 'bg-white text-gray-900'">
 
                     <!-- If this is an assistant message AND loading is in progress, show the AI thinking loader -->
                     <div v-if="message.role === 'assistant' && isLoading" class="flex items-center gap-2 text-gray-500">
@@ -187,6 +187,7 @@
 
 <script setup lang="ts">
 definePageMeta({ layout: 'studio' })
+import { user } from '#build/ui-pro';
 import { ref, onMounted } from 'vue'
 import { useAI } from '~/composables/useAI'
 const isAtBottom = ref(true)
@@ -247,6 +248,9 @@ onMounted(() => {
 })
 </script>
 <style scoped>
+.chat {
+  background-color: white;
+}
 /* Apply to all scrollable elements */
 ::-webkit-scrollbar {
   width: 5px;
