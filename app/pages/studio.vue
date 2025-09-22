@@ -61,7 +61,7 @@
     <div class="flex-1 flex flex-col">
       <!-- Top bar -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200">
-        <h1 class="text-lg font-semibold">{{ chatTitle }}</h1>
+        <h1 class="text-lg font-semibold text-black">{{ chatTitle }}</h1>
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <div class="w-6 h-6 bg-yellow-400 rounded-full"></div>
