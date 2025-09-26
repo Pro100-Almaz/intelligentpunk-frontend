@@ -5,20 +5,9 @@
         <!-- left: search + mega menu -->
         <template #leading>
           <div class="flex items-center space-x-4">
-            <UInput
-              v-model="search"
-              placeholder="Search here…"
-              size="md"
-              clearable
-              icon="i-lucide-search"
-              class="min-w-[220px]"
-            />
-            <UDropdownMenu
-              label="Mega menu"
-              :items="megaMenuItems"
-              size="md"
-              variant="outline"
-            />
+            <UInput v-model="search" placeholder="Search here…" size="md" clearable icon="i-lucide-search"
+              class="min-w-[220px]" />
+            <UDropdownMenu label="Mega menu" :items="megaMenuItems" size="md" variant="outline" />
           </div>
         </template>
 
@@ -35,15 +24,9 @@
             </div>
             <!-- language -->
             <UTooltip text="Switch language">
-              <UButton
-                variant="ghost"
-                square
-                @click="locale = locale === 'en' ? 'es' : 'en'"
-              >
-                <UIcon
-                  :name="locale === 'en' ? 'i-twemoji-flag-united-kingdom' : 'i-twemoji-flag-spain'"
-                  class="size-5"
-                />
+              <UButton variant="ghost" square @click="locale = locale === 'en' ? 'es' : 'en'">
+                <UIcon :name="locale === 'en' ? 'i-twemoji-flag-united-kingdom' : 'i-twemoji-flag-spain'"
+                  class="size-5" />
               </UButton>
             </UTooltip>
             <!-- scan -->
@@ -52,11 +35,7 @@
             </UTooltip>
             <!-- notifications -->
             <UTooltip text="Notifications (N)">
-              <UButton
-                variant="ghost"
-                square
-                @click="isNotificationsSlideoverOpen = true"
-              >
+              <UButton variant="ghost" square @click="isNotificationsSlideoverOpen = true">
                 <UChip color="error" inset>
                   <UIcon name="i-lucide-bell" class="size-5" />
                 </UChip>
@@ -80,14 +59,11 @@
     </template>
 
     <template #body>
-      <div class="max-w-7xl mx-auto space-y-6 p-6">
+      <div class="max-w-[68rem] mx-auto space-y-6 p-6">
         <!-- Hero banner -->
         <div class="relative rounded-2xl overflow-hidden bg-black">
-          <img
-            src="https://images.unsplash.com/photo-1526378722484-bd91ca387e72?q=80&w=1600&auto=format&fit=crop"
-            alt="Hero"
-            class="absolute inset-0 w-full h-full object-cover opacity-70"
-          />
+          <img src="https://images.unsplash.com/photo-1526378722484-bd91ca387e72?q=80&w=1600&auto=format&fit=crop"
+            alt="Hero" class="absolute inset-0 w-full h-full object-cover opacity-70" />
           <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
           <div class="relative p-8 md:p-10 lg:p-12 min-h-[280px] flex items-center justify-center text-center">
             <div>
@@ -106,8 +82,9 @@
         </div>
 
         <!-- Categories chips -->
-        <div class="flex flex-wrap gap-3">
-          <UButton v-for="cat in categories" :key="cat.label" variant="outline" size="sm" :icon="cat.icon">
+        <div class="flex gap-3 overflow-x-auto flex-nowrap">
+          <UButton v-for="cat in categories" :key="cat.label" variant="outline" size="sm" :icon="cat.icon"
+            class="shrink-0">
             {{ cat.label }}
           </UButton>
         </div>
@@ -115,33 +92,29 @@
         <!-- Top Tools -->
         <div>
           <SectionTitle title="Top Tools" />
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-            <ToolCard
-              v-for="tool in topTools"
-              :key="tool.id"
-              :tool="tool"
-              badge="Trending"
-              cta-label="Try Now"
-              cta-color="info"
-              @cta="onCta"
-            />
-          </div>
-        </div>
+          <Swiper :modules="[Pagination]" :slides-per-view="1" :space-between="16" :breakpoints="{
+            640: { slidesPerView: 2 },
+            1024: { slidesPerView: 3 },
+            1280: { slidesPerView: 6 },
+          }" :pagination="{ clickable: true }" class="!pb-8">
+            <SwiperSlide v-for="tool in topTools" :key="tool.id">
+              <ToolCard :tool="tool" badge="Trending" cta-label="Try Now" cta-color="info" @cta="onCta" />
+            </SwiperSlide>
+          </Swiper>
 
+        </div>
         <!-- New Arrivals -->
         <div>
           <SectionTitle title="New Arrivals" />
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-            <ToolCard
-              v-for="tool in newArrivals"
-              :key="tool.id"
-              :tool="tool"
-              badge="New"
-              :cta-label="tool.cta"
-              :cta-color="tool.ctaColor"
-              @cta="onCta"
-            />
-          </div>
+          <swiper  :modules="[Pagination]" :slides-per-view="1" :space-between="16" :breakpoints="{
+            640: { slidesPerView: 2 },
+            1024: { slidesPerView: 3 },
+            1280: { slidesPerView: 6 },
+          }" :pagination="{ clickable: true }" class="!pb-8">
+            <swiper-slide v-for="tool in newArrivals" :key="tool.id">
+              <ToolCard :tool="tool" badge="New" :cta-label="tool.cta" :cta-color="tool.ctaColor" @cta="onCta" />
+            </swiper-slide>
+          </swiper>
         </div>
         <!-- For You header -->
         <div class="flex items-center justify-between">
@@ -156,15 +129,9 @@
 
         <!-- Quick Actions -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          <QuickActionCard
-            v-for="qa in quickActions"
-            :key="qa.title"
-            :title="qa.title"
-            :image="qa.image"
-            :bg="qa.bg"
-          />
+          <QuickActionCard v-for="qa in quickActions" :key="qa.title" :title="qa.title" :image="qa.image" :bg="qa.bg" />
         </div>
-        
+
         <!-- Free & Low point tools -->
         <ToolGridSection title="Free & Low point tools" :tools="freeLow" @cta="onCta" />
 
@@ -184,7 +151,12 @@ import SectionTitle from '~/components/marketplace/SectionTitle.vue'
 import ForYouCard from '~/components/marketplace/ForYouCard.vue'
 import QuickActionCard from '~/components/marketplace/QuickActionCard.vue'
 import ToolGridSection from '~/components/marketplace/ToolGridSection.vue'
-
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import 'swiper/css'
+import 'swiper/css/pagination'
+import { Pagination } from 'swiper/modules'
+// register modules
+const modules = [Pagination]
 // definePageMeta({
 //   layout: 'default',
 //   middleware: 'auth',
@@ -237,6 +209,7 @@ const categories = [
   { label: 'Image Generation', icon: 'i-lucide-image' },
   { label: 'Speech Recognition', icon: 'i-lucide-waveform' },
   { label: 'Video Generation', icon: 'i-lucide-video' },
+  { label: 'Music Generation', icon: 'i-lucide-music' },
   { label: 'Music Generation', icon: 'i-lucide-music' }
 ]
 
@@ -247,6 +220,8 @@ const topTools = [
   { id: 4, name: 'Gemini', icon: 'https://api.iconify.design/simple-icons:googlebard.svg', points: 342 },
   { id: 5, name: 'Copilot', icon: 'https://api.iconify.design/simple-icons:githubcopilot.svg', points: 342 },
   { id: 6, name: 'Midjourney', icon: 'https://api.iconify.design/simple-icons:midjourney.svg', points: 342 },
+  { id: 6, name: 'Midjourney', icon: 'https://api.iconify.design/simple-icons:midjourney.svg', points: 342 },
+
 ]
 
 const newArrivals = [
@@ -256,9 +231,11 @@ const newArrivals = [
   { id: 4, name: 'Gemini', icon: 'https://api.iconify.design/simple-icons:googlebard.svg', points: 4, cta: 'Try Now', ctaColor: 'info' },
   { id: 5, name: 'Gemini', icon: 'https://api.iconify.design/simple-icons:googlebard.svg', points: 4, cta: 'Try Now', ctaColor: 'info' },
   { id: 6, name: 'Deepseek', icon: 'https://api.iconify.design/simple-icons:deepseek.svg', points: 4, cta: 'Try Now', ctaColor: 'info' },
+  { id: 6, name: 'Deepseek', icon: 'https://api.iconify.design/simple-icons:deepseek.svg', points: 4, cta: 'Try Now', ctaColor: 'info' },
+
 ]
 
-function onCta(tool: { id:number; name:string }) {
+function onCta(tool: { id: number; name: string }) {
   // Placeholder for CTA behavior; navigate or open details as needed
   console.log('CTA clicked for', tool.name)
 }
@@ -341,6 +318,8 @@ const freeLow = [
   { id: 104, name: 'ChatGPT', icon: 'https://api.iconify.design/simple-icons:openmoji.svg', points: 4, tag: 'Free', cta: 'Try Now', ctaColor: 'info' },
   { id: 105, name: 'ChatGPT', icon: 'https://api.iconify.design/simple-icons:githubcopilot.svg', points: 4, tag: 'Free', cta: 'Try Now', ctaColor: 'info' },
   { id: 106, name: 'ChatGPT', icon: 'https://api.iconify.design/simple-icons:midjourney.svg', points: 4, tag: 'Free', cta: 'Try Now', ctaColor: 'info' },
+  { id: 106, name: 'ChatGPT', icon: 'https://api.iconify.design/simple-icons:midjourney.svg', points: 4, tag: 'Free', cta: 'Try Now', ctaColor: 'info' },
+
 ]
 
 const allTools = [
