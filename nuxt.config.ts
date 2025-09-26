@@ -56,7 +56,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE_URL || 'http://127.0.0.1:8000',
+      apiBase: process.env.API_BASE_URL || 'https://api.project-x.space',
       aiApiBase: process.env.NUXT_PUBLIC_AI_API_BASE || 'https://chat.project-x.space/api/v1',
       stripePublishableKey: process.env.NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
       stripePriceStarter: process.env.NUXT_PUBLIC_STRIPE_PRICE_STARTER,

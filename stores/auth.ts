@@ -108,6 +108,27 @@ export const useAuthStore = defineStore('auth', {
         return { success: false }
       }
     },
+    async refreshToken() {
+      if (!this.token) return
+
+      const config = useRuntimeConfig()
+      try {
+        const data = await $fetch<AuthResponse>(`${config.public.apiBase}/api/token/refresh/`, {
+          method: 'POST',
+          body: { refresh: this.token }
+        })
+        if (data.access) {
+          this.token = data.access
+          if (this.user) {
+            setAuthCookies(data.access, this.user, 60 * 60 * 24) 
+          }
+        } else {
+          this.logout()
+        }
+      } catch {
+        this.logout()
+      }
+    },
 
     async login(payload: { email: string; password: string; remember?: boolean }) {
       this.clearErrors()
