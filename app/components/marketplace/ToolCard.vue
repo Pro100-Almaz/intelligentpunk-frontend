@@ -1,7 +1,7 @@
 <template>
-  <div class="relative bg-white rounded-xl p-4 shadow-md">
+  <div class="relative bg-white rounded-xl p-4 pt-7 shadow-md">
     <!-- Badge (Trending/New) -->
-    <div v-if="badge || badgeLabel" class="absolute -top-2 left-3">
+    <div v-if="badge || badgeLabel" class="absolute top-0 left-0 flex items-start">
       <span
         class="text-[11px] px-2 py-1 rounded-full text-white"
         :class="computedBadgeClass"
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Favorite icon -->
-    <button class="absolute top-3 right-3 text-gray-400 hover:text-rose-500" @click.stop="$emit('favorite', tool)">
+    <button class="absolute top-1 right-3 text-gray-400 hover:text-rose-500" @click.stop="$emit('favorite', tool)">
       <UIcon name="i-lucide-heart" class="w-4 h-4" />
     </button>
 
