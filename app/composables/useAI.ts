@@ -33,7 +33,7 @@ export const useAI = () => {
   // Use configuration for the response-generator service
   const apiBase = config.public.aiApiBase
 
-  const sendMessage = async (content: string, stream: boolean = false) => {
+  const sendMessage = async (content: string, stream: boolean = false, model: string) => {
     isLoading.value = true
     error.value = null
     currentStreamingMessage.value = ''
@@ -47,9 +47,10 @@ export const useAI = () => {
     }
     messages.value.push(userMessage)
     const userIndex = messages.value.length - 1
-  
+    const normalizedModel = model.replace('/', ':')
+
     const requestBody: ChatRequest = {
-      model: 'openai:gpt-4o-mini',
+      model: normalizedModel,
       messages: messages.value.map(m => ({ role: m.role, content: m.content })),
       temperature: 0.3,
       max_tokens: 2000,
