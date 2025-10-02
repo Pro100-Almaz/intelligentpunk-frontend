@@ -13,20 +13,18 @@
       <!-- Navigation + History -->
       <div class="flex-1 flex flex-col min-h-0 p-4 space-y-4">
         <div class="space-y-2 shrink-0">
-          <UButton icon="i-lucide-home" variant="ghost" size="xs"
-            class="w-full justify-start gap-x-2 text-black" @click="navigateTo('/')">
+          <UButton icon="i-lucide-home" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black"
+            @click="navigateTo('/')">
             <p class="text-xs">Go to Dashboard</p>
           </UButton>
-          <UButton icon="i-lucide-folder" variant="ghost" size="xs"
-            class="w-full justify-start gap-x-2 text-black">
+          <UButton icon="i-lucide-folder" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black">
             <p class="text-xs">Open Assets</p>
           </UButton>
-          <UButton icon="i-lucide-git-branch" variant="ghost" size="xs"
-            class="w-full justify-start gap-x-2 text-black">
+          <UButton icon="i-lucide-git-branch" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black">
             <p class="text-xs">Discover Workflows</p>
           </UButton>
-          <UButton icon="i-lucide-pencil" variant="ghost" size="xs"
-            class="w-full justify-start gap-x-2 text-black" @click="handleNewSession">
+          <UButton icon="i-lucide-pencil" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black"
+            @click="handleNewSession">
             <p class="text-xs">New Session</p>
           </UButton>
         </div>
@@ -35,11 +33,8 @@
           <h3 class="text-sm mb-3 text-black">History</h3>
           <div class="space-y-1 text-xs">
             <div v-for="chat in chats" :key="chat.id">
-              <UButton variant="ghost" size="xs"
-                class="w-full justify-start gap-x-2"
-                @click="handleLoadChat(chat)">
-                <UIcon name="i-lucide-message-circle"
-                  class="shrink-0 w-4 h-4 text-black" />
+              <UButton variant="ghost" size="xs" class="w-full justify-start gap-x-2" @click="handleLoadChat(chat)">
+                <UIcon name="i-lucide-message-circle" class="shrink-0 w-4 h-4 text-black" />
                 <span class="truncate text-xs text-black">
                   {{ chat.title || 'New Chat' }}
                 </span>
@@ -79,11 +74,10 @@
       </div>
 
       <!-- Chat container -->
-      <UContainer class="flex-1 flex flex-col gap-4 max-w-4xl mx-auto sm:gap-6">
-        <UChatMessages
-          :messages="messages"
-          :status="isLoading ? 'streaming' : 'ready'"
-          :assistant="{
+      <UContainer class="flex-1 flex flex-col max-w-4xl mx-auto sm:gap-6 overflow-hidden">
+        <!-- Messages -->
+        <div class="flex-1 overflow-y-auto pr-2">
+          <UChatMessages :messages="messages" :status="isLoading ? 'streaming' : 'ready'" :assistant="{
             variant: 'solid',
             actions: [
               {
@@ -92,47 +86,31 @@
                 onClick: () => copy(lastMessageText)
               }
             ]
-          }"
-          class="lg:pt-(--ui-header-height) pb-4 sm:pb-6"
-          :spacing-offset="160"
-        >
-          <template #content="{ message }">
-            <div class="space-y-4">
-              <template v-for="(part, index) in message.parts" :key="`${part.type}-${index}-${message.id}`">
-                <UButton
-                  v-if="part.type === 'reasoning' && 'state' in part && part.state !== undefined && part.state !== 'done'"
-                  label="Thinking..."
-                  variant="link"
-                  color="neutral"
-                  class="p-0"
-                  loading
-                />
-              </template>
-              <div v-html="getTextFromMessage(message)" class="prose prose-sm max-w-none" />
+          }" :user="{ variant: 'solid' }" class="pb-4 sm:pb-6" :spacing-offset="160">
+            <template #content="{ message }">
+              <div class="space-y-4">
+                <template v-for="(part, index) in message.parts" :key="`${part.type}-${index}-${message.id}`">
+                  <UButton v-if="part.type === 'reasoning' && 'state' in part && part.state !== 'done'" label="Thinking..."
+                    variant="link" color="neutral" class="p-0" loading />
+                </template>
+                <div v-html="getTextFromMessage(message)" class="prose prose-sm max-w-none" />
+              </div>
+            </template>
+          </UChatMessages>
+        </div>
 
-            </div>
-          </template>
-        </UChatMessages>
-
-        <UChatPrompt
-          v-model="input"
-          :error="error"
-          variant="soft"
-          class="sticky bottom-10 [view-transition-name:chat-prompt] bg-gray-800 rounded-b-none z-10 !text-black focus:text-black hover:text-black"
-          @submit="handleSend"
-        >
-          <UChatPromptSubmit
-            :status="isLoading ? 'streaming' : 'ready'"
-            color="neutral"
-            @stop="() => {}"
-            @reload="() => {}"
-          />
+        <!-- Prompt -->
+        <UChatPrompt v-model="input" :error="error" variant="soft" class="sticky bottom-10 dark:bg-gray-700 bg-white text-black z-10"
+          @submit="handleSend">
+          <UChatPromptSubmit :status="isLoading ? 'streaming' : 'ready'" color="primary" @stop="() => { }"
+            @reload="() => { }" />
 
           <template #footer>
             <ModelSelect v-model="model" />
           </template>
         </UChatPrompt>
       </UContainer>
+
     </div>
   </div>
 </template>
@@ -142,7 +120,6 @@ definePageMeta({ layout: 'studio' })
 
 import { ref, onMounted, computed } from 'vue'
 import { useAI } from '~/composables/useAI'
-// import MDCCached from '~/components/MDCCached.vue'
 import ModelSelect from '@/components/ModelSelect.vue'
 
 // state
@@ -204,18 +181,48 @@ onMounted(() => {
 ::-webkit-scrollbar {
   width: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.4);
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(0, 0, 0, 0.5);
 }
+
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
 }
+/* pierce child component CSS and override the highlighted text rules */
+:deep(.text-highlighted),
+:deep(.text-highlighted) textarea,
+:deep(.text-highlighted) .w-full {
+  color: #111 !important;           /* visible input text */
+}
+
+/* placeholder */
+:deep(.text-highlighted) textarea::placeholder,
+:deep(.text-highlighted)::placeholder {
+  color: rgba(0,0,0,0.45) !important; /* readable placeholder */
+}
+
+@media (prefers-color-scheme: dark) {
+  :deep(.text-highlighted),
+  :deep(.text-highlighted) textarea,
+  :deep(.text-highlighted) .w-full {
+    color: #fff !important;    
+  }
+
+  :deep(.text-highlighted) textarea::placeholder,
+  :deep(.text-highlighted)::placeholder {
+    color: rgba(255,255,255,0.6) !important; /* softer white placeholder */
+  }
+}
+
 </style>
