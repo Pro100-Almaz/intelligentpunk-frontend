@@ -120,7 +120,6 @@ definePageMeta({ layout: 'studio' })
 
 import { ref, onMounted, computed } from 'vue'
 import { useAI } from '~/composables/useAI'
-// import MDCCached from '~/components/MDCCached.vue'
 import ModelSelect from '@/components/ModelSelect.vue'
 
 // state
