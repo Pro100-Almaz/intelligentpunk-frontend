@@ -79,7 +79,7 @@
       </div>
 
       <!-- Chat container -->
-      <UContainer class="flex-1 flex flex-col gap-4 sm:gap-6">
+      <UContainer class="flex-1 flex flex-col gap-4 max-w-4xl mx-auto sm:gap-6">
         <UChatMessages
           :messages="messages"
           :status="isLoading ? 'streaming' : 'ready'"
@@ -118,7 +118,7 @@
           v-model="input"
           :error="error"
           variant="soft"
-          class="sticky bottom-0 [view-transition-name:chat-prompt] rounded-b-none z-10 !text-black focus:text-black hover:text-black"
+          class="sticky bottom-10 [view-transition-name:chat-prompt] bg-gray-800 rounded-b-none z-10 !text-black focus:text-black hover:text-black"
           @submit="handleSend"
         >
           <UChatPromptSubmit
