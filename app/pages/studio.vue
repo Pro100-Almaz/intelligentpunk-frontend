@@ -212,6 +212,18 @@ onMounted(() => {
   color: rgba(0,0,0,0.45) !important; /* readable placeholder */
 }
 
+:deep(.text-inverted),
+:deep(.text-inverted) div {
+  color: #111 !important;      
+  background-color: #fff !important; /* visible input text */
+}
+
+/* placeholder */
+:deep(.text-highlighted) textarea::placeholder,
+:deep(.text-highlighted)::placeholder {
+  color: rgba(0,0,0,0.45) !important; /* readable placeholder */
+}
+
 @media (prefers-color-scheme: dark) {
   :deep(.text-highlighted),
   :deep(.text-highlighted) textarea,
@@ -223,6 +235,11 @@ onMounted(() => {
   :deep(.text-highlighted)::placeholder {
     color: rgba(255,255,255,0.6) !important; /* softer white placeholder */
   }
+  :deep(.text-inverted),
+:deep(.text-inverted) div {
+  color: #fff !important;      
+  background-color: #111 !important; /* visible input text */
+}
 }
 
 </style>
