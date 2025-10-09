@@ -102,7 +102,7 @@
         </div>
 
         <!-- Prompt -->
-        <UChatPrompt v-model="input" :error="error" variant="soft" class="sticky bottom-10 dark:bg-gray-700 bg-white text-black z-10"
+        <UChatPrompt v-model="input" :error="error" variant="soft" class="sticky bottom-10 dark:bg-gray-700 bg-white text-black z-10 shadow-md"
           @submit="handleSend">
           <UChatPromptSubmit :status="isLoading ? 'streaming' : 'ready'" color="primary" @stop="() => { }"
             @reload="() => { }" />
