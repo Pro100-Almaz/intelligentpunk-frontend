@@ -1,5 +1,5 @@
 <template>
-  <UCard class="bg-white rounded-xl">
+  <UCard class="bg-white dark:bg-gray-900 rounded-xl">
     <div class="flex items-center">
       <!-- Left: text & legend -->
       <div class="flex-1 pr-4">

@@ -56,7 +56,7 @@ onMounted(() => {
     <!-- Sidebar (left) -->
     <aside
       :class="[
-        'fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out h-screen bg-white border-r border-gray-200 flex flex-col',
+        'fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out h-screen bg-white dark:bg-gray-800 border-r border-gray-200 flex flex-col',
         sidebarOpen ? 'w-72' : 'w-16'
       ]"
     >
@@ -75,7 +75,7 @@ onMounted(() => {
       </div>
       <!-- Navigation Menus -->
       <div class="flex-1 overflow-y-auto px-2 py-4">
-        <UNavigationMenu :collapsed="!sidebarOpen" :items="links[0]" orientation="vertical" tooltip popover />
+        <UNavigationMenu :collapsed="!sidebarOpen" :items="links[0]" orientation="vertical" tooltip popover/>
         <div class="mt-6">
           <UNavigationMenu :collapsed="!sidebarOpen" :items="links[1]" orientation="vertical" tooltip />
         </div>

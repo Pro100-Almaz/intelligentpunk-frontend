@@ -8,7 +8,7 @@
     </div>
 
     <!-- Individual Project Items -->
-    <div v-for="project in projects" :key="project.id" class="bg-white rounded-lg p-2 mb-2 last:mb-0 w-full">
+    <div v-for="project in projects" :key="project.id" class="bg-white dark:bg-gray-900 rounded-lg p-2 mb-2 last:mb-0 w-full">
       <div class="grid grid-cols-6 gap-2 items-center">
         <!-- Column 1: Tool Image (1/6) -->
         <div class="col-span-1 flex justify-center">

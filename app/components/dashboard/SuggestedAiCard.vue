@@ -3,7 +3,7 @@
     <h2 class="text-sm font-medium text-gray-600 mb-4">Suggested AI based on your chat history</h2>
     
     <div class="space-y-4">
-      <UCard v-for="item in suggestions" :key="item.id" class="bg-gray-50">
+      <UCard v-for="item in suggestions" :key="item.id" class="bg-gray-50 dark:bg-gray-800">
         <div class="grid grid-cols-6 gap-4 items-center">
           <!-- First column: AI Icon (1/6) -->
           <div class="col-span-1 flex justify-center">

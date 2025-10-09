@@ -343,9 +343,9 @@ const latestProjects = [
 </script>
 
 <template>
-  <UDashboardPanel id="home" class="p-0">
+  <UDashboardPanel id="home" class="p-0 dark:bg-gray-800">
     <template #header>
-      <UDashboardNavbar class="bg-gray-50">
+      <UDashboardNavbar class="bg-gray-50 dark:bg-gray-900">
         <!-- left side -->
         <template #leading>
           <div class="flex items-center space-x-4">
@@ -438,7 +438,7 @@ const latestProjects = [
       <div class="max-w-7xl mx-auto space-y-6 p-6">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
           <WelcomeCard
-            class="md:col-span-4"
+            class="md:col-span-4 bg-white dark:bg-gray-900"
             :user="user"
             :tip="tipOfTheDay"
           />

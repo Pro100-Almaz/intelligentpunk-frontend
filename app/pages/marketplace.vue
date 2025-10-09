@@ -1,7 +1,7 @@
 <template>
-  <UDashboardPanel id="marketplace" class="p-0">
+  <UDashboardPanel id="marketplace" class="p-0 dark:bg-gray-800 ">
     <template #header>
-      <UDashboardNavbar class="bg-gray-50">
+      <UDashboardNavbar class="bg-gray-50 dark:bg-gray-900">
         <!-- left: search + mega menu -->
         <template #leading>
           <div class="flex items-center space-x-4">

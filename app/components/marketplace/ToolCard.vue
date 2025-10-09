@@ -1,5 +1,5 @@
 <template>
-  <div class="relative bg-white rounded-xl p-4 pt-7 shadow-md">
+  <div class="relative bg-white dark:bg-gray-900 rounded-xl p-4 pt-7 shadow-md">
     <!-- Badge (Trending/New) -->
     <div v-if="badge || badgeLabel" class="absolute top-0 left-0 flex items-start">
       <span

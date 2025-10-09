@@ -5,7 +5,7 @@ export function useModels() {
       // 'openai/gpt-5-mini',
       'openai/gpt-4o',
       'openai/gpt-4o-mini',
-      'openai:gpt-4.1',
+      'openai/gpt-4.1',
       'openai/gpt-3.5-turbo',
       // Anthropic Claude Models
     //   'anthropic/claude-sonnet-4',

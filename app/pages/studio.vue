@@ -1,9 +1,9 @@
 <template>
   <div class="flex h-screen bg-gray-100">
     <!-- Sidebar -->
-    <div class="w-60 bg-gray-50 border-r border-gray-200 flex flex-col">
+    <div class="w-60 bg-gray-50 border-r border-gray-200 flex flex-col dark:bg-gray-800 bg-white">
       <!-- Header -->
-      <div class="p-4 pb-0 border-gray-200">
+      <div class="p-4 pb-0 border-gray-200 ">
         <div class="flex justify-between items-center gap-3">
           <UButton icon="i-lucide-arrow-left" variant="ghost" size="sm" />
           <UButton icon="i-lucide-panel-left" variant="ghost" size="sm" />
@@ -11,32 +11,34 @@
       </div>
 
       <!-- Navigation + History -->
-      <div class="flex-1 flex flex-col min-h-0 p-4 space-y-4">
+      <div class="flex-1 flex flex-col min-h-0 p-4 space-y-4 ">
         <div class="space-y-2 shrink-0">
-          <UButton icon="i-lucide-home" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black"
+          <UButton icon="i-lucide-home" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black dark:text-white"
             @click="navigateTo('/')">
-            <p class="text-xs">Go to Dashboard</p>
+            <p class="text-xs text-black dark:text-white">Go to Dashboard</p>
           </UButton>
-          <UButton icon="i-lucide-folder" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black">
-            <p class="text-xs">Open Assets</p>
+          <UButton icon="i-lucide-folder" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black dark:text-white">
+            <p class="text-xs text-black dark:text-white">Open Assets</p>
           </UButton>
-          <UButton icon="i-lucide-git-branch" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black">
-            <p class="text-xs">Discover Workflows</p>
+          <UButton icon="i-lucide-git-branch" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black dark:text-white">
+            <p class="text-xs text-black dark:text-white">Discover Workflows</p>
           </UButton>
-          <UButton icon="i-lucide-pencil" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black"
+          <UButton icon="i-lucide-pencil" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black dark:text-white"
             @click="handleNewSession">
-            <p class="text-xs">New Session</p>
+            <p class="text-xs text-black dark:text-white">New Session</p>
           </UButton>
         </div>
 
         <div class="flex-1 min-h-0 overflow-y-auto">
-          <h3 class="text-sm mb-3 text-black">History</h3>
+          <h3 class="text-sm mb-3 text-black dark:text-white">History</h3>
           <div class="space-y-1 text-xs">
             <div v-for="chat in chats" :key="chat.id">
               <UButton variant="ghost" size="xs" class="w-full justify-start gap-x-2" @click="handleLoadChat(chat)">
                 <UIcon name="i-lucide-message-circle" class="shrink-0 w-4 h-4 text-black" />
-                <span class="truncate text-xs text-black">
+                <span class="truncate text-xs">
+                  <p class="text-black dark:text-white">
                   {{ chat.title || 'New Chat' }}
+                  </p>
                 </span>
               </UButton>
             </div>
@@ -49,7 +51,7 @@
         <div class="flex items-center gap-2 mb-3">
           <div class="w-6 h-6 bg-green-300 rounded"></div>
           <div>
-            <div class="text-sm font-medium text-gray-900">Intelligent</div>
+            <div class="text-sm font-medium text-gray-900 dark:text-white">Intelligent</div>
             <div class="text-xs text-gray-500">Free</div>
           </div>
         </div>
@@ -60,10 +62,10 @@
     </div>
 
     <!-- Main Chat Panel -->
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col dark:bg-gray-800 bg-white">
       <!-- Top bar -->
       <div class="flex items-center justify-between p-4 border-b border-gray-200">
-        <h1 class="text-lg font-semibold text-black">{{ chatTitle }}</h1>
+        <h1 class="text-lg font-semibold text-black dark:text-white">{{ chatTitle }}</h1>
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-2">
             <div class="w-6 h-6 bg-yellow-400 rounded-full"></div>
@@ -74,7 +76,7 @@
       </div>
 
       <!-- Chat container -->
-      <UContainer class="flex-1 flex flex-col max-w-4xl mx-auto sm:gap-6 overflow-hidden">
+      <UContainer class="flex-1 flex flex-col max-w-4xl mx-auto sm:gap-6 overflow-hidden dark:bg-gray-800 bg-white">
         <!-- Messages -->
         <div class="flex-1 overflow-y-auto pr-2">
           <UChatMessages :messages="messages" :status="isLoading ? 'streaming' : 'ready'" :assistant="{

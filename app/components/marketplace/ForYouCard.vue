@@ -1,5 +1,5 @@
 <template>
-  <div class="relative bg-white rounded-2xl shadow-md p-5 flex items-center gap-4">
+  <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-md p-5 flex items-center gap-4">
     <!-- Fav icon -->
     <button class="absolute top-4 right-4 text-gray-400 hover:text-rose-500" @click.stop="$emit('favorite', item)">
       <UIcon :name="item.liked ? 'i-lucide-heart' : 'i-lucide-heart'" class="w-5 h-5" :class="item.liked ? 'text-rose-500' : ''" />
