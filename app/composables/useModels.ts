@@ -1,25 +1,16 @@
 export function useModels() {
-    const models = [
-      // OpenAI Models
-      // 'openai/gpt-5',
-      // 'openai/gpt-5-mini',
-      'openai/gpt-4o',
-      'openai/gpt-4o-mini',
-      'openai/gpt-4.1',
-      'openai/gpt-3.5-turbo',
-      // Anthropic Claude Models
-    //   'anthropic/claude-sonnet-4',
-    //   'anthropic/claude-sonnet-3.7',
-      // Google Gemini Models
-    //   'google/gemini-2.5-pro',
-    //   'google/gemini-2.5-flash'
-    ]
-  
-    const model = useCookie<string>('model', { default: () => 'openai/gpt-4o-mini' })
-  
-    return {
-      models,
-      model
-    }
+  const models = [
+    'openai/gpt-4o',
+    'openai/gpt-4o-mini',
+    'openai/gpt-4.1',
+    'openai/gpt-3.5-turbo',
+  ]
+
+  const model = useCookie<string>('model', { default: () => 'openai/gpt-4o-mini' })
+
+  if (!model.value) {
+    model.value = 'openai/gpt-4o-mini'
   }
-  
+
+  return { models, model }
+}
