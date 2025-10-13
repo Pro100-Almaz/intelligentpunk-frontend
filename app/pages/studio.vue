@@ -130,7 +130,7 @@ const copied = ref(false)
 const input = ref('')
 
 // composable
-const { chats, messages, isLoading, sendMessage, clearMessages, getHistory, loadChat } = useAI()
+const { chats, messages, isLoading, sendMessage, clearMessages, getHistory, loadChat, getModels, createConversation } = useAI()
 const error = computed(() => {
   const errorMessage = useAI().error?.value;
   return errorMessage ? new Error(errorMessage) : undefined;
@@ -158,12 +158,23 @@ async function handleSend() {
   if (!input.value.trim()) return
   const message = input.value
   input.value = ''
-  await sendMessage(message, true, model.value)
+  if(chats.value.length === 0) {
+    const newChatId = await createConversation(1, message)
+    chatTitle.value = message
+    if(newChatId) {
+      await sendMessage(message, true, model.value, Number(newChatId))
+    }
+  }
+  else {
+    await sendMessage(message, true, model.value, chats.value[0].id)
+  }
   await getHistory()
 }
 
 function handleNewSession() {
-  clearMessages()
+  clearMessages();
+  createConversation(1, 'New Chat');
+  getHistory();
   chatTitle.value = 'New Chat'
 }
 
@@ -175,6 +186,7 @@ async function handleLoadChat(chat: { id: string; title: string }) {
 // init
 onMounted(() => {
   getHistory()
+  getModels()
 })
 </script>
 
