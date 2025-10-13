@@ -3,7 +3,6 @@ import { defineStore } from 'pinia'
 import { $fetch } from 'ofetch'
 import { useCookie, navigateTo, useRuntimeConfig } from '#app'
 
-
 export interface User {
   id: number
   username: string
@@ -28,47 +27,47 @@ interface UserResponse {
 
 export interface AuthState {
   user: User | null
-  token: string | null
+  token: string | null         // access token
+  refreshToken: string | null  // refresh token
   authErrors: Record<string, string[]>
   successMessage: string | null
 }
 
-function setAuthCookies(token: string, user: User, maxAge: number) {
-  console.log('[DEBUG] Setting auth cookies with maxAge:', maxAge)
-  
+/**
+ * Helper to store tokens and user info in cookies
+ */
+function setAuthCookies(access: string, refresh: string, user: User, maxAge: number) {
+  console.log('[DEBUG] Setting auth cookies (maxAge:', maxAge, ')')
+
   const cookieOpts = {
     default: () => null,
     maxAge,
     sameSite: 'lax' as const,
-    secure: false, // Force secure to false for development
-    httpOnly: false, // Explicitly set to false
-    path: '/' // Ensure cookie is available on all routes
+    secure: false,
+    httpOnly: false,
+    path: '/'
   }
-  console.log('[DEBUG] Cookie options:', cookieOpts)
 
-  const authCookie = useCookie<string | null>('auth-token', cookieOpts)
-  authCookie.value = token
-  console.log('[DEBUG] Set auth-token cookie:', !!authCookie.value)
-
+  const accessCookie = useCookie<string | null>('auth-token', cookieOpts)
+  const refreshCookie = useCookie<string | null>('refresh-token', cookieOpts)
   const userCookie = useCookie<string | null>('user-data', cookieOpts)
+
+  accessCookie.value = access
+  refreshCookie.value = refresh
   userCookie.value = JSON.stringify(user)
-  console.log('[DEBUG] Set user-data cookie:', !!userCookie.value)
-  
-  // Force a check immediately after setting
-  setTimeout(() => {
-    const checkAuth = useCookie<string | null>('auth-token')
-    const checkUser = useCookie<string | null>('user-data')
-    console.log('[DEBUG] Immediate cookie check:', {
-      authToken: !!checkAuth.value,
-      userData: !!checkUser.value
-    })
-  }, 100)
+
+  console.log('[DEBUG] Cookies set successfully:', {
+    access: !!accessCookie.value,
+    refresh: !!refreshCookie.value,
+    user: !!userCookie.value
+  })
 }
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
     token: null,
+    refreshToken: null,
     authErrors: {},
     successMessage: null
   }),
@@ -93,114 +92,52 @@ export const useAuthStore = defineStore('auth', {
       this.authErrors = {}
     },
 
-    async register(payload: { username: string; email: string; password: string }) {
-      this.clearErrors()
-      try {
-        // For now, just return success: false since we're focusing on login
-        // You can implement this later based on your register API endpoint
-        this.setErrors({ general: ['Registration not implemented yet'] })
-        return { success: false }
-      } catch (err: any) {
-        const msg = err?.data?.errors
-          ? err.data.errors
-          : { general: [err.message || 'Registration failed'] }
-        this.setErrors(msg)
-        return { success: false }
-      }
-    },
-    async refreshToken() {
-      if (!this.token) return
-
-      const config = useRuntimeConfig()
-      try {
-        const data = await $fetch<AuthResponse>(`${config.public.apiBase}/api/token/refresh/`, {
-          method: 'POST',
-          body: { refresh: this.token }
-        })
-        if (data.access) {
-          this.token = data.access
-          if (this.user) {
-            setAuthCookies(data.access, this.user, 60 * 60 * 24) 
-          }
-        } else {
-          this.logout()
-        }
-      } catch {
-        this.logout()
-      }
-    },
-
+    /**
+     * 🔐 Login and store both tokens
+     */
     async login(payload: { email: string; password: string; remember?: boolean }) {
       this.clearErrors()
-
       const config = useRuntimeConfig()
       const url = `${config.public.apiBase}/api/token/`
 
       try {
-        console.log('[DEBUG] Making login request to:', url)
-        console.log('[DEBUG] Login payload:', { ...payload, password: '***' })
-        
+        console.log('[DEBUG] Sending login request to:', url)
         const data = await $fetch<AuthResponse>(url, {
           method: 'POST',
           body: payload
         })
 
-        console.log('[DEBUG] Raw API response:', data)
-        console.log('[DEBUG] Response access:', data.access)
-        console.log('[DEBUG] Response refresh:', data.refresh)
-        console.log('[DEBUG] Response errors:', data.errors)
+        console.log('[DEBUG] Login response:', data)
 
         if (data.errors) {
           this.setErrors(data.errors)
           return { success: false }
         }
 
-        if (!data.access) {
-          this.setErrors({ general: ['No access token received'] })
+        if (!data.access || !data.refresh) {
+          this.setErrors({ general: ['Invalid token response'] })
           return { success: false }
         }
 
-        console.log('[DEBUG] Login successful, getting user info')
-        
-        // Get user information using the access token
-        try {
-          const userInfo = await $fetch<UserResponse>(`${config.public.apiBase}/api/users/me/`, {
-            headers: {
-              'Authorization': `Bearer ${data.access}`
-            }
-          })
-          
-          console.log('[DEBUG] User info received:', userInfo)
-          
-          this.token = data.access
-          this.user = userInfo
+        // Fetch user info
+        const userInfo = await $fetch<UserResponse>(`${config.public.apiBase}/api/users/me/`, {
+          headers: { Authorization: `Bearer ${data.access}` }
+        })
 
-          const maxAge = payload.remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24
-          setAuthCookies(data.access, userInfo, maxAge)
-          
-          console.log('[DEBUG] Auth state after login:', {
-            token: !!this.token,
-            user: !!this.user,
-            isLoggedIn: this.isLoggedIn
-          })
+        this.token = data.access
+        this.refreshToken = data.refresh
+        this.user = userInfo
 
-          return { success: true }
-        } catch (userError) {
-          console.error('[DEBUG] Failed to get user info:', userError)
-          // Even if user info fails, we still have a valid token
-          this.token = data.access
-          // Create a minimal user object from the token payload if possible
-          this.user = {
-            id: 0,
-            username: payload.email.split('@')[0],
-            email: payload.email
-          } as User
-          
-          const maxAge = payload.remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24
-          setAuthCookies(data.access, this.user, maxAge)
-          
-          return { success: true }
-        }
+        const maxAge = payload.remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24
+        setAuthCookies(data.access, data.refresh, userInfo, maxAge)
+
+        console.log('[DEBUG] Login successful:', {
+          token: !!this.token,
+          refresh: !!this.refreshToken,
+          user: this.user?.email
+        })
+
+        return { success: true }
       } catch (err: any) {
         console.error('[DEBUG] Login error:', err)
         const msg = err?.data?.errors
@@ -211,17 +148,111 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /**
+     * 🔁 Use refresh token to get new access token
+     */
+    async refreshTokenIfNeeded() {
+      if (!this.refreshToken) {
+        console.warn('[DEBUG] No refresh token available')
+        return false
+      }
+
+      const config = useRuntimeConfig()
+      try {
+        console.log('[DEBUG] Refreshing access token...')
+        const data = await $fetch<AuthResponse>(`${config.public.apiBase}/api/token/refresh/`, {
+          method: 'POST',
+          body: { refresh: this.refreshToken }
+        })
+
+        if (data.access) {
+          this.token = data.access
+
+          const accessCookie = useCookie<string | null>('auth-token')
+          accessCookie.value = data.access
+
+          console.log('[DEBUG] Access token refreshed successfully')
+          return true
+        } else {
+          console.warn('[DEBUG] Refresh failed - no access token returned')
+          this.logout()
+          return false
+        }
+      } catch (err) {
+        console.error('[DEBUG] Token refresh error:', err)
+        this.logout()
+        return false
+      }
+    },
+
+    /**
+     * 🚪 Log out user and clear cookies
+     */
     logout() {
+      console.log('[DEBUG] Logging out user')
       this.user = null
       this.token = null
+      this.refreshToken = null
       this.clearErrors()
 
       useCookie('auth-token').value = null
+      useCookie('refresh-token').value = null
       useCookie('user-data').value = null
 
       navigateTo('/login')
     },
 
+    /**
+     * 💾 Restore user and tokens from cookies
+     */
+    initAuth() {
+      console.log('[DEBUG] Initializing auth from cookies')
+
+      const cookieOpts = {
+        default: () => null,
+        httpOnly: false,
+        secure: false,
+        path: '/'
+      }
+
+      const accessCookie = useCookie<string | null>('auth-token', cookieOpts)
+      const refreshCookie = useCookie<string | null>('refresh-token', cookieOpts)
+      const userCookie = useCookie<string | null>('user-data', cookieOpts)
+
+      console.log('[DEBUG] Cookie check:', {
+        access: !!accessCookie.value,
+        refresh: !!refreshCookie.value,
+        user: !!userCookie.value
+      })
+
+      if (accessCookie.value && userCookie.value) {
+        this.token = accessCookie.value
+        this.refreshToken = refreshCookie.value
+        try {
+          this.user = JSON.parse(userCookie.value)
+          if (this.user) {
+            console.log('[DEBUG] Restored user from cookies:', this.user.email)
+          } else {
+            console.log('[DEBUG] User is null, cannot restore email')
+          }
+        } catch {
+          console.error('[DEBUG] Failed to parse user cookie')
+          this.user = null
+        }
+      } else {
+        console.log('[DEBUG] No valid auth cookies found')
+      }
+
+      console.log('[DEBUG] Final auth state:', {
+        token: !!this.token,
+        refresh: !!this.refreshToken,
+        isLoggedIn: this.isLoggedIn
+      })
+    },
+
+    /**
+     * 🧠 Example: request password reset
+     */
     async forgotPassword(email: string) {
       this.clearErrors()
       try {
@@ -241,6 +272,9 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    /**
+     * 🔒 Reset password using token
+     */
     async resetPassword(token: string, newPassword: string) {
       this.clearErrors()
       try {
@@ -258,51 +292,6 @@ export const useAuthStore = defineStore('auth', {
         this.setErrors({ general: [err.message || 'Password reset failed'] })
         return { success: false }
       }
-    },
-
-    initAuth() {
-      console.log('[DEBUG] Initializing auth state from cookies')
-
-      // If already initialized, skip re-initialization
-      if (this.token && this.user) {
-        console.log('[DEBUG] Auth already initialized, skipping cookie load')
-        return
-      }
-
-      const cookieOpts = {
-        default: () => null,
-        httpOnly: false,
-        secure: false,
-        path: '/'
-      }
-      
-      const authCookie = useCookie<string | null>('auth-token', cookieOpts)
-      const userCookie = useCookie<string | null>('user-data', cookieOpts)
-      
-      console.log('[DEBUG] Cookie values:', {
-        authToken: !!authCookie.value,
-        userData: !!userCookie.value
-      })
-      
-      if (authCookie.value && userCookie.value) {
-        this.token = authCookie.value
-        try {
-          this.user = JSON.parse(userCookie.value)
-          console.log('[DEBUG] Successfully restored auth state from cookies')
-        } catch {
-          console.log('[DEBUG] Failed to parse user data, clearing cookies')
-          authCookie.value = null
-          userCookie.value = null
-        }
-      } else {
-        console.log('[DEBUG] No valid auth cookies found')
-      }
-      
-      console.log('[DEBUG] Final auth state:', {
-        token: !!this.token,
-        user: !!this.user,
-        isLoggedIn: this.isLoggedIn
-      })
     }
   }
 })
