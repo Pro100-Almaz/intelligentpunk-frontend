@@ -86,7 +86,7 @@ export const useAI = () => {
     content: string,
     stream: boolean = false,
     model: string,
-    id: number
+    id: string
   ) => {
     isLoading.value = true
     error.value = null
