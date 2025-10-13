@@ -76,7 +76,7 @@
       </div>
 
       <!-- Chat container -->
-      <UContainer class="flex-1 flex flex-col max-w-4xl mx-auto sm:gap-6 overflow-hidden dark:bg-gray-800 bg-white">
+      <UContainer class="flex-1 flex flex-col max-w-4xl mx-auto sm:gap-6 overflow-hidden dark:bg-gray-800 bg-white pt-4">
         <!-- Messages -->
         <div class="flex-1 overflow-y-auto pr-2">
           <UChatMessages :messages="messages" :status="isLoading ? 'streaming' : 'ready'" :assistant="{
@@ -125,6 +125,7 @@ import { useAI } from '~/composables/useAI'
 import ModelSelect from '@/components/ModelSelect.vue'
 
 // state
+const isNewSession = ref(true)
 const chatTitle = ref('New Chat')
 const copied = ref(false)
 const input = ref('')
@@ -156,26 +157,30 @@ function copy(text: string) {
 // actions
 async function handleSend() {
   if (!input.value.trim()) return
+
   const message = input.value
   input.value = ''
-  if(chats.value.length === 0) {
+
+  if (isNewSession.value) {
     const newChatId = await createConversation(1, message)
-    chatTitle.value = message
-    if(newChatId) {
+    if (newChatId) {
+      chatTitle.value = message
       await sendMessage(message, true, model.value, Number(newChatId))
+      isNewSession.value = false 
+    }
+  } else {
+    if (chats.value.length > 0) {
+      await sendMessage(message, true, model.value, chats.value[0].id)
     }
   }
-  else {
-    await sendMessage(message, true, model.value, chats.value[0].id)
-  }
+
   await getHistory()
 }
 
 function handleNewSession() {
-  clearMessages();
-  createConversation(1, 'New Chat');
-  getHistory();
+  clearMessages()
   chatTitle.value = 'New Chat'
+  isNewSession.value = true
 }
 
 async function handleLoadChat(chat: { id: string; title: string }) {
