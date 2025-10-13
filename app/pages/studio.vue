@@ -128,6 +128,7 @@ import ModelSelect from '@/components/ModelSelect.vue'
 const isNewSession = ref(true)
 const chatTitle = ref('New Chat')
 const copied = ref(false)
+const currentChatId = ref<string | null>(null) 
 const input = ref('')
 
 // composable
@@ -162,16 +163,20 @@ async function handleSend() {
   input.value = ''
 
   if (isNewSession.value) {
+    // Create new conversation
     const newChatId = await createConversation(1, message)
+    console.log('Created new conversation with ID:', newChatId)
     if (newChatId) {
+      currentChatId.value = newChatId
       chatTitle.value = message
-      await sendMessage(message, true, model.value, Number(newChatId))
-      isNewSession.value = false 
+      await sendMessage(message, true, model.value, currentChatId.value)
+      isNewSession.value = false
     }
+  } else if (currentChatId.value) {
+    // Existing conversation
+    await sendMessage(message, true, model.value, currentChatId.value)
   } else {
-    if (chats.value.length > 0) {
-      await sendMessage(message, true, model.value, chats.value[0].id)
-    }
+    console.warn('⚠️ No chat ID found for existing chat.')
   }
 
   await getHistory()
@@ -181,11 +186,15 @@ function handleNewSession() {
   clearMessages()
   chatTitle.value = 'New Chat'
   isNewSession.value = true
+  currentChatId.value = null
+
 }
 
 async function handleLoadChat(chat: { id: string; title: string }) {
   await loadChat(chat.id)
   chatTitle.value = chat.title || 'New Chat'
+  currentChatId.value = chat.id
+  isNewSession.value = false
 }
 
 // init
