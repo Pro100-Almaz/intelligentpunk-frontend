@@ -13,18 +13,20 @@
       <!-- Navigation + History -->
       <div class="flex-1 flex flex-col min-h-0 p-4 space-y-4 ">
         <div class="space-y-2 shrink-0">
-          <UButton icon="i-lucide-home" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black dark:text-white"
-            @click="navigateTo('/')">
+          <UButton icon="i-lucide-home" variant="ghost" size="xs"
+            class="w-full justify-start gap-x-2 text-black dark:text-white" @click="navigateTo('/')">
             <p class="text-xs text-black dark:text-white">Go to Dashboard</p>
           </UButton>
-          <UButton icon="i-lucide-folder" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black dark:text-white">
+          <UButton icon="i-lucide-folder" variant="ghost" size="xs"
+            class="w-full justify-start gap-x-2 text-black dark:text-white">
             <p class="text-xs text-black dark:text-white">Open Assets</p>
           </UButton>
-          <UButton icon="i-lucide-git-branch" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black dark:text-white">
+          <UButton icon="i-lucide-git-branch" variant="ghost" size="xs"
+            class="w-full justify-start gap-x-2 text-black dark:text-white">
             <p class="text-xs text-black dark:text-white">Discover Workflows</p>
           </UButton>
-          <UButton icon="i-lucide-pencil" variant="ghost" size="xs" class="w-full justify-start gap-x-2 text-black dark:text-white"
-            @click="handleNewSession">
+          <UButton icon="i-lucide-pencil" variant="ghost" size="xs"
+            class="w-full justify-start gap-x-2 text-black dark:text-white" @click="handleNewSession">
             <p class="text-xs text-black dark:text-white">New Session</p>
           </UButton>
         </div>
@@ -37,7 +39,7 @@
                 <UIcon name="i-lucide-message-circle" class="shrink-0 w-4 h-4 text-black" />
                 <span class="truncate text-xs">
                   <p class="text-black dark:text-white">
-                  {{ chat.title || 'New Chat' }}
+                    {{ chat.title || 'New Chat' }}
                   </p>
                 </span>
               </UButton>
@@ -76,7 +78,8 @@
       </div>
 
       <!-- Chat container -->
-      <UContainer class="flex-1 flex flex-col max-w-4xl mx-auto sm:gap-6 overflow-hidden dark:bg-gray-800 bg-white pt-4">
+      <UContainer
+        class="flex-1 flex flex-col max-w-4xl mx-auto sm:gap-6 overflow-hidden dark:bg-gray-800 bg-white pt-4">
         <!-- Messages -->
         <div class="flex-1 overflow-y-auto pr-2">
           <UChatMessages :messages="messages" :status="isLoading ? 'streaming' : 'ready'" :assistant="{
@@ -92,18 +95,25 @@
             <template #content="{ message }">
               <div class="space-y-4">
                 <template v-for="(part, index) in message.parts" :key="`${part.type}-${index}-${message.id}`">
-                  <UButton v-if="part.type === 'reasoning' && 'state' in part && part.state !== 'done'" label="Thinking..."
-                    variant="link" color="neutral" class="p-0" loading />
+                  <UButton v-if="part.type === 'reasoning' && 'state' in part && part.state !== 'done'"
+                    label="Thinking..." variant="link" color="neutral" class="p-0" loading />
                 </template>
                 <div v-html="getTextFromMessage(message)" class="prose prose-sm max-w-none" />
               </div>
             </template>
           </UChatMessages>
+          <div v-if="isAnalyzing" class="px-4 sm:px-6">
+            <div
+              class="w-full px-4 py-2 text-black dark:text-white text-sm rounded-md flex items-center gap-2">
+              <UIcon name="i-lucide-brain-circuit" class="w-4 h-4 text-black dark:text-white animate-pulse" />
+              <span>Thinking...</span>
+            </div>
+          </div>
         </div>
 
         <!-- Prompt -->
-        <UChatPrompt v-model="input" :error="error" variant="soft" class="sticky bottom-10 dark:bg-gray-700 bg-white text-black z-10 shadow-md"
-          @submit="handleSend">
+        <UChatPrompt v-model="input" :error="error" variant="soft"
+          class="sticky bottom-10 dark:bg-gray-700 bg-white text-black z-10 shadow-md" @submit="handleSend">
           <UChatPromptSubmit :status="isLoading ? 'streaming' : 'ready'" color="primary" @stop="() => { }"
             @reload="() => { }" />
 
@@ -126,9 +136,10 @@ import ModelSelect from '@/components/ModelSelect.vue'
 
 // state
 const isNewSession = ref(true)
+const isAnalyzing = ref(false)
 const chatTitle = ref('New Chat')
 const copied = ref(false)
-const currentChatId = ref<string | null>(null) 
+const currentChatId = ref<string | null>(null)
 const input = ref('')
 
 // composable
@@ -162,8 +173,9 @@ async function handleSend() {
   const message = input.value
   input.value = ''
 
+  isAnalyzing.value = true
+
   if (isNewSession.value) {
-    // Create new conversation
     const newChatId = await createConversation(1, message)
     console.log('Created new conversation with ID:', newChatId)
     if (newChatId) {
@@ -173,14 +185,15 @@ async function handleSend() {
       isNewSession.value = false
     }
   } else if (currentChatId.value) {
-    // Existing conversation
     await sendMessage(message, true, model.value, currentChatId.value)
   } else {
     console.warn('⚠️ No chat ID found for existing chat.')
   }
 
+  isAnalyzing.value = false
   await getHistory()
 }
+
 
 function handleNewSession() {
   clearMessages()
@@ -227,47 +240,71 @@ onMounted(() => {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.4) transparent;
 }
+
 /* pierce child component CSS and override the highlighted text rules */
 :deep(.text-highlighted),
 :deep(.text-highlighted) textarea,
 :deep(.text-highlighted) .w-full {
-  color: #111 !important;           /* visible input text */
+  color: #111 !important;
+  /* visible input text */
 }
 
 /* placeholder */
 :deep(.text-highlighted) textarea::placeholder,
 :deep(.text-highlighted)::placeholder {
-  color: rgba(0,0,0,0.45) !important; /* readable placeholder */
+  color: rgba(0, 0, 0, 0.45) !important;
+  /* readable placeholder */
 }
 
 :deep(.text-inverted),
 :deep(.text-inverted) div {
-  color: #111 !important;      
-  background-color: #fff !important; /* visible input text */
+  color: #111 !important;
+  background-color: #e4e4e4 !important;
+  /* visible input text */
 }
 
 /* placeholder */
 :deep(.text-highlighted) textarea::placeholder,
 :deep(.text-highlighted)::placeholder {
-  color: rgba(0,0,0,0.45) !important; /* readable placeholder */
+  color: rgba(0, 0, 0, 0.45) !important;
+  /* readable placeholder */
 }
 
 @media (prefers-color-scheme: dark) {
+
   :deep(.text-highlighted),
   :deep(.text-highlighted) textarea,
   :deep(.text-highlighted) .w-full {
-    color: #fff !important;    
+    color: #fff !important;
   }
 
   :deep(.text-highlighted) textarea::placeholder,
   :deep(.text-highlighted)::placeholder {
-    color: rgba(255,255,255,0.6) !important; /* softer white placeholder */
+    color: rgba(255, 255, 255, 0.6) !important;
+    /* softer white placeholder */
   }
+
   :deep(.text-inverted),
-:deep(.text-inverted) div {
-  color: #fff !important;      
-  background-color: #111 !important; /* visible input text */
-}
+  :deep(.text-inverted) div {
+    color: #fff !important;
+    background-color: #111 !important;
+    /* visible input text */
+  }
 }
 
+:deep(.animate-pulse) {
+  animation: pulse 1.8s infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
 </style>
