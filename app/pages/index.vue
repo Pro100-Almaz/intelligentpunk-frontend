@@ -414,7 +414,7 @@ const latestProjects = [
             </UTooltip>
 
             <!-- profile dropdown -->
-            <UDropdownMenu :items="profileItems" trigger="hover">
+            <!-- <UDropdownMenu :items="profileItems" trigger="hover">
               <div class="flex items-center cursor-pointer">
                 <UAvatar
                   size="sm"
@@ -423,12 +423,12 @@ const latestProjects = [
                 <span class="ml-2 text-sm font-medium">admin</span>
                 <UIcon name="i-lucide-chevron-down" class="size-4 ml-1" />
               </div>
-            </UDropdownMenu>
+            </UDropdownMenu> -->
 
             <!-- settings -->
-            <UTooltip text="Settings">
+            <!-- <UTooltip text="Settings">
               <UButton variant="ghost" square icon="i-lucide-settings" />
-            </UTooltip>
+            </UTooltip> -->
           </div>
         </template>
       </UDashboardNavbar>
