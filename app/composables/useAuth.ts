@@ -32,8 +32,13 @@ export function useAuth() {
     return result
   }
 
+  async function register(payload: { username: string; email: string; password: string, password_confirm: string }) {
+    return await auth.register(payload)
+  }
+
   return {
     login,
+    register,
     authErrors,
     isLoggedIn: computed(() => auth.isLoggedIn),
     user,
