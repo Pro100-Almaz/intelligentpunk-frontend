@@ -108,7 +108,7 @@
             @reload="() => { }" />
 
           <template #footer>
-            <ModelSelect v-model="model" />
+            <ModelSelect v-model="model"  :models="models"/>
           </template>
         </UChatPrompt>
       </UContainer>
@@ -132,7 +132,7 @@ const currentChatId = ref<string | null>(null)
 const input = ref('')
 
 // composable
-const { chats, messages, isLoading, sendMessage, clearMessages, getHistory, loadChat, getModels, createConversation } = useAI()
+const { chats, messages, models, isLoading, sendMessage, clearMessages, getHistory, loadChat, getModels, createConversation } = useAI()
 const error = computed(() => {
   const errorMessage = useAI().error?.value;
   return errorMessage ? new Error(errorMessage) : undefined;
