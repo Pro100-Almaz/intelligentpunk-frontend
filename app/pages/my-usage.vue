@@ -314,7 +314,7 @@ const config = useRuntimeConfig()
 const auth = useAuthStore()
 async function fetchPointsFromBackend() {
   try {
-    const data = await $fetch<{ balance: string | number }>(`${config.public.apiBase}/api/balance/wallet/balance/`, {
+    const data = await $fetch<{ balance: string | number }>(`${config.public.apiBase}/api/balance/`, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
     const raw = typeof data.balance === 'string' ? parseFloat(data.balance) : Number(data.balance)

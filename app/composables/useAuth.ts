@@ -11,7 +11,6 @@ export function useAuth() {
 
   // pull reactive refs out of the store
   const { authErrors, user } = storeToRefs(auth)
-
   async function login(creds: { email: string; password: string; remember?: boolean }) {
     console.log('[DEBUG] useAuth login called')
     const result = await auth.login(creds)
