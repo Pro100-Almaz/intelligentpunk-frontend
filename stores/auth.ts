@@ -251,6 +251,59 @@ export const useAuthStore = defineStore('auth', {
     },
 
     /**
+ * 🧾 Register new user
+ */
+    async register(payload: { username: string; email: string; password: string, password_confirm: string }) {
+      this.clearErrors()
+      const config = useRuntimeConfig()
+      const url = `${config.public.apiBase}/api/users/register/client/`
+
+      try {
+        console.log('[DEBUG] Sending registration request to:', url)
+        const data = await $fetch<AuthResponse>(url, {
+          method: 'POST',
+          body: payload
+        })
+
+        console.log('[DEBUG] Registration response:', data)
+
+        if (data.errors) {
+          this.setErrors(data.errors)
+          return { success: false }
+        }
+
+        // Some APIs return tokens upon registration
+        if (data.access && data.refresh) {
+          const userInfo = await $fetch<UserResponse>(`${config.public.apiBase}/api/users/me/`, {
+            headers: { Authorization: `Bearer ${data.access}` }
+          })
+
+          this.token = data.access
+          this.refreshToken = data.refresh
+          this.user = userInfo
+
+          const maxAge = 60 * 60 * 24
+          setAuthCookies(data.access, data.refresh, userInfo, maxAge)
+
+          this.setSuccessMessage('Registration successful!')
+          return { success: true }
+        }
+
+        // If backend doesn’t return tokens immediately
+        this.setSuccessMessage('Account created successfully. Please log in.')
+        return { success: true }
+      } catch (err: any) {
+        console.error('[DEBUG] Registration error:', err)
+        const msg = err?.data?.errors
+          ? err.data.errors
+          : { general: [err.message || 'Registration failed'] }
+        this.setErrors(msg)
+        return { success: false }
+      }
+    },
+
+
+    /**
      * 🧠 Example: request password reset
      */
     async forgotPassword(email: string) {

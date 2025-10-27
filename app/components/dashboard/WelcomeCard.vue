@@ -5,7 +5,7 @@
       <UAvatar :src="user.avatar" alt="User avatar" size="3xl" />
       <div>
         <div class="text-gray-500 text-sm">Welcome back,</div>
-        <div class="text-xl font-bold">{{ user.name }}</div>
+        <div class="text-xl font-bold">{{ user }}</div>
       </div>
     </div>
 

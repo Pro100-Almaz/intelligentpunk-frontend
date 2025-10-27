@@ -18,13 +18,17 @@ import QuickAccessCard from '~/components/dashboard/QuickAccessCard.vue'
 import RecentActivityCard from '~/components/dashboard/RecentActivityCard.vue'
 import LatestProjectsCard from '~/components/dashboard/LatestProjectsCard.vue'
 
+
+const user = useAuthStore()
+
+
 definePageMeta({
   layout: 'default',
   middleware: 'auth',
   requiresAuth: true,
 })
 
-const { isNotificationsSlideoverOpen } = useDashboard()
+const { isNotificationsSlideoverOpen, getBalance, balanceData } = useDashboard()
 
 const range = shallowRef<Range>({
   start: sub(new Date(), { days: 14 }),
@@ -48,12 +52,6 @@ const profileItems = [
   { label: 'Profile', icon: 'i-lucide-user', to: '/profile' },
   { label: 'Sign out', icon: 'i-lucide-log-out', to: '/logout' }
 ] satisfies DropdownMenuItem[]
-
-// Mock data
-const user = {
-  name: 'John',
-  avatar: '/placeholder.svg'
-}
 
 const tipOfTheDay = {
   icon: '🧠',
@@ -84,7 +82,7 @@ const auth = useAuthStore()
 
 async function fetchPointsFromBackend() {
   try {
-    const data = await $fetch<{ balance: string | number }>(`${config.public.apiBase}/api/balance/wallet/balance/`, {
+    const data = await $fetch<{ balance: string | number }>(`${config.public.apiBase}/api/balance/`, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
     const raw = typeof data.balance === 'string' ? parseFloat(data.balance) : Number(data.balance)
@@ -139,6 +137,7 @@ async function fetchSubscription() {
 onMounted(() => {
   fetchPointsFromBackend()
   fetchSubscription()
+  getBalance()
 })
 
 const aiModels = [
@@ -439,7 +438,7 @@ const latestProjects = [
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
           <WelcomeCard
             class="md:col-span-4 bg-white dark:bg-gray-900"
-            :user="user"
+            :user="user.user?.first_name"
             :tip="tipOfTheDay"
           />
 

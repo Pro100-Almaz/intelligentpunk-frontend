@@ -1,30 +1,68 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watchEffect, watch, nextTick } from 'vue'
 
-const models = [
-  'openai/gpt-4o',
-  'openai/gpt-4o-mini',
-  'openai/gpt-4.1',
-  'openai/gpt-3.5-turbo',
-]
+const props = defineProps<{
+  models: any
+}>()
 
-// Just use a ref — no cookies
-const model = ref('openai/gpt-4o-mini')
+// Currently selected model
+const model = ref('')
 
-const items = computed(() =>
-  models.map(m => ({
-    label: m,
-    value: m,
-    icon: `i-simple-icons-${m.split('/')[0]}`
-  }))
+// Computed list of all items
+const items = computed(() => {
+  const result: { label: string; value: string; icon: string }[] = []
+  const providers = props.models?.providers || props.models || []
+
+  providers.forEach((provider: any) => {
+    provider?.instruments?.forEach((instrument: any) => {
+      instrument?.models?.forEach((modelName: string) => {
+        const fullName = `${provider.name}/${modelName}`
+        result.push({
+          label: `${provider.name} - ${modelName}`,
+          value: fullName,
+          icon: `i-simple-icons-${provider.name}`
+        })
+      })
+    })
+  })
+
+  return result
+})
+
+// Find the selected item from the list
+const selectedItem = computed(() => items.value.find(i => i.value === model.value))
+
+// Reactive icon state
+const selectedIcon = ref('')
+
+// Ensure the icon updates immediately when model or items change
+watchEffect(() => {
+  selectedIcon.value = selectedItem.value?.icon || ''
+})
+
+// Optional: if models are loaded asynchronously, re-trigger reactivity
+watch(
+  () => props.models,
+  async () => {
+    await nextTick()
+    model.value = model.value // trigger reactivity refresh
+  },
+  { deep: true, immediate: true }
 )
+
+// Optional: if no model is preselected, select the first one
+watch(items, (val) => {
+  if (val.length && !model.value) {
+    model.value = val[0]?.value || ''
+  }
+})
 </script>
 
 <template>
   <USelectMenu
     v-model="model"
     :items="items"
-    :icon="`i-simple-icons-${model.split('/')[0]}`"
+    :icon="selectedIcon"
     variant="ghost"
     value-key="value"
     class="hover:bg-default focus:bg-default data-[state=open]:bg-default"

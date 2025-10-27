@@ -5,7 +5,7 @@ definePageMeta({
 
 const route = useRoute()
 const toast = useToast()
-const { register, authErrors, successMessage } = useAuth()
+const { register, authErrors } = useAuth()
 
 const form = reactive({
   username: '',
@@ -58,7 +58,8 @@ const handleRegister = async () => {
     const result = await register({
       username: form.username,
       email: form.email,
-      password: form.password
+      password: form.password,
+      password_confirm: form.confirmPassword
     })
     
     if (result.success) {

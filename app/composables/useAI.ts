@@ -25,6 +25,7 @@ export const useAI = () => {
   const config = useRuntimeConfig()
   const messages = ref<ChatMessage[]>([])
   const chats = ref<any[]>([])
+  const models = ref<any[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const currentStreamingMessage = ref<string>('')
@@ -43,6 +44,7 @@ export const useAI = () => {
           'Authorization': `Bearer ${token}`
         }
       })
+      models.value = response.ok ? await response.json() : []
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`)
@@ -456,6 +458,7 @@ export const useAI = () => {
   return {
     messages: computed(() => messages.value),
     chats: computed(() => chats.value),
+    models: computed(() => models.value),
     isLoading: computed(() => isLoading.value),
     error: computed(() => error.value),
     currentStreamingMessage: computed(() => currentStreamingMessage.value),

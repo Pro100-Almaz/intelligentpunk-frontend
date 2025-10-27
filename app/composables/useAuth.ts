@@ -11,7 +11,6 @@ export function useAuth() {
 
   // pull reactive refs out of the store
   const { authErrors, user } = storeToRefs(auth)
-
   async function login(creds: { email: string; password: string; remember?: boolean }) {
     console.log('[DEBUG] useAuth login called')
     const result = await auth.login(creds)
@@ -32,8 +31,13 @@ export function useAuth() {
     return result
   }
 
+  async function register(payload: { username: string; email: string; password: string, password_confirm: string }) {
+    return await auth.register(payload)
+  }
+
   return {
     login,
+    register,
     authErrors,
     isLoggedIn: computed(() => auth.isLoggedIn),
     user,

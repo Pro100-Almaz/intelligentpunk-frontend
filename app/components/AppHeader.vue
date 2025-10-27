@@ -140,7 +140,7 @@ async function fetchPoints() {
     if (!isLoggedIn.value) return
     loadingPoints.value = true
     const auth = useAuthStore()
-    const data = await $fetch<{ balance: string | number }>(`${config.public.apiBase}/api/balance/wallet/balance/`, {
+    const data = await $fetch<{ balance: string | number }>(`${config.public.apiBase}/api/balance/`, {
       headers: { Authorization: `Bearer ${auth.token}` }
     })
     const raw = typeof data.balance === 'string' ? parseFloat(data.balance) : Number(data.balance)
