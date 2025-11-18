@@ -253,7 +253,7 @@
             
             <!-- Chart bars -->
             <svg
-              :viewBox="`0 0 ${chart.length * 50} 240`"
+              viewBox="0 0 600 240"
               class="w-full h-full absolute left-8 top-0 bottom-8"
               preserveAspectRatio="none"
             >
@@ -322,7 +322,17 @@ async function fetchPointsFromBackend() {
     headerPoints.value = val
   } catch {}
 }
-onMounted(() => fetchPointsFromBackend())
+onMounted(async () => {
+  // Ensure auth is initialized before making API calls
+  if (import.meta.client && !auth.initialized) {
+    await auth.initAuth()
+  }
+  
+  // Only make API calls if user is authenticated
+  if (auth.isLoggedIn) {
+    fetchPointsFromBackend()
+  }
+})
 
 // Table data
 type LogRow = { id:number; tool:string; icon:string; type:string; time:string; points:string; status:'Success'|'Failed'; action:string }
@@ -374,11 +384,13 @@ const range = ref<'day'|'week'|'months'|'years'>('months')
 const chart = ref<number[]>([80, 100, 150, 80, 20, 220, 100, 400, 70, 140, 420, 100])
 
 // Bar sizing and positioning so bars align with month labels
-const barStep = 50 // distance between month centers in SVG units
+const totalWidth = 600 // SVG viewBox width (12 months * 50 units each)
+const monthWidth = totalWidth / 12 // 50 units per month
 const barWidth = 28 // actual bar width
 function barX(index: number) {
-  // Center each bar at index*barStep then subtract half width
-  const center = index * barStep + (barStep / 2)
+  // Center each bar in its corresponding month column
+  // Each month column is 50 units wide, centered at (index * 50) + 25
+  const center = (index * monthWidth) + (monthWidth / 2)
   return center - (barWidth / 2)
 }
 

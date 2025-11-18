@@ -1,350 +1,378 @@
-// stores/auth.ts
 import { defineStore } from 'pinia'
-import { $fetch } from 'ofetch'
-import { useCookie, navigateTo, useRuntimeConfig } from '#app'
 
-export interface User {
-  id: number
-  username: string
+export type User = {
+  id: string
   email: string
   name?: string
-  role?: string
+  username?: string
+  avatar?: string
 }
 
-interface AuthResponse {
-  access: string
-  refresh: string
-  errors?: Record<string, string[]>
+type LoginDto = {
+  email: string,
+  password: string,
+  remember?: boolean
 }
 
-interface UserResponse {
-  id: number
-  username: string
-  email: string
-  name?: string
-  role?: string
-}
-
-export interface AuthState {
-  user: User | null
-  token: string | null         // access token
-  refreshToken: string | null  // refresh token
-  authErrors: Record<string, string[]>
-  successMessage: string | null
-}
-
-/**
- * Helper to store tokens and user info in cookies
- */
-function setAuthCookies(access: string, refresh: string, user: User, maxAge: number) {
-  console.log('[DEBUG] Setting auth cookies (maxAge:', maxAge, ')')
-
-  const cookieOpts = {
-    default: () => null,
-    maxAge,
-    sameSite: 'lax' as const,
-    secure: false,
-    httpOnly: false,
-    path: '/'
-  }
-
-  const accessCookie = useCookie<string | null>('auth-token', cookieOpts)
-  const refreshCookie = useCookie<string | null>('refresh-token', cookieOpts)
-  const userCookie = useCookie<string | null>('user-data', cookieOpts)
-
-  accessCookie.value = access
-  refreshCookie.value = refresh
-  userCookie.value = JSON.stringify(user)
-
-  console.log('[DEBUG] Cookies set successfully:', {
-    access: !!accessCookie.value,
-    refresh: !!refreshCookie.value,
-    user: !!userCookie.value
-  })
+type RegisterDto = {
+  email: string,
+  password: string,
+  name?: string,
+  username?: string,
+  password_confirm?: string
 }
 
 export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({
-    user: null,
-    token: null,
-    refreshToken: null,
-    authErrors: {},
-    successMessage: null
+  state: () => ({
+    user: null as User | null,
+
+    // If your backend uses Bearer tokens instead of cookies, set to 'bearer'
+    mode: 'cookie' as 'cookie' | 'bearer',
+
+    // Only used in bearer mode:
+    accessToken: '' as string,
+    refreshToken: '' as string,
+
+    loading: false,
+    authErrors: [] as string[],
+    initialized: false as boolean
   }),
 
   getters: {
-    isLoggedIn: (state) => !!state.token && !!state.user,
-    hasErrors: (state) => Object.keys(state.authErrors).length > 0
+    isAuthenticated: s => !!s.user,
+    isLoggedIn: s => !!s.user,
+    token: s => {
+      // Check cookie first (for cookie-bearer hybrid mode)
+      if (import.meta.client) {
+        const authCookie = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('auth-token='))
+          ?.split('=')[1]
+        if (authCookie) return authCookie
+      }
+      // Fall back to bearer mode
+      return s.mode === 'bearer' ? s.accessToken : ''
+    },
   },
 
   actions: {
-    clearErrors() {
-      this.authErrors = {}
-      this.successMessage = null
-    },
-
-    setErrors(errors: Record<string, string[]>) {
-      this.authErrors = errors
-    },
-
-    setSuccessMessage(msg: string) {
-      this.successMessage = msg
-      this.authErrors = {}
-    },
-
-    /**
-     * 🔐 Login and store both tokens
-     */
-    async login(payload: { email: string; password: string; remember?: boolean }) {
-      this.clearErrors()
-      const config = useRuntimeConfig()
-      const url = `${config.public.apiBase}/api/token/`
-
-      try {
-        console.log('[DEBUG] Sending login request to:', url)
-        const data = await $fetch<AuthResponse>(url, {
-          method: 'POST',
-          body: payload
-        })
-
-        console.log('[DEBUG] Login response:', data)
-
-        if (data.errors) {
-          this.setErrors(data.errors)
-          return { success: false }
-        }
-
-        if (!data.access || !data.refresh) {
-          this.setErrors({ general: ['Invalid token response'] })
-          return { success: false }
-        }
-
-        // Fetch user info
-        const userInfo = await $fetch<UserResponse>(`${config.public.apiBase}/api/users/me/`, {
-          headers: { Authorization: `Bearer ${data.access}` }
-        })
-
-        this.token = data.access
-        this.refreshToken = data.refresh
-        this.user = userInfo
-
-        const maxAge = payload.remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24
-        setAuthCookies(data.access, data.refresh, userInfo, maxAge)
-
-        console.log('[DEBUG] Login successful:', {
-          token: !!this.token,
-          refresh: !!this.refreshToken,
-          user: this.user?.email
-        })
-
-        return { success: true }
-      } catch (err: any) {
-        console.error('[DEBUG] Login error:', err)
-        const msg = err?.data?.errors
-          ? err.data.errors
-          : { general: [err.message || 'Login failed'] }
-        this.setErrors(msg)
-        return { success: false }
-      }
-    },
-
-    /**
-     * 🔁 Use refresh token to get new access token
-     */
-    async refreshTokenIfNeeded() {
-      if (!this.refreshToken) {
-        console.warn('[DEBUG] No refresh token available')
-        return false
+    // Initialize auth from cookie or localStorage
+    async initAuth() {
+      // Prevent multiple simultaneous initialization calls
+      if (this.initialized) {
+        return
       }
 
-      const config = useRuntimeConfig()
-      try {
-        console.log('[DEBUG] Refreshing access token...')
-        const data = await $fetch<AuthResponse>(`${config.public.apiBase}/api/token/refresh/`, {
-          method: 'POST',
-          body: { refresh: this.refreshToken }
-        })
+      if (import.meta.client) {
+        // Use useCookie to read the auth token cookie (consistent with how we write it)
+        const authCookie = useCookie('auth-token')
+        const token = authCookie.value
 
-        if (data.access) {
-          this.token = data.access
+        // Get saved user from localStorage
+        const savedUser = localStorage.getItem('user')
 
-          const accessCookie = useCookie<string | null>('auth-token')
-          accessCookie.value = data.access
-
-          console.log('[DEBUG] Access token refreshed successfully')
-          return true
-        } else {
-          console.warn('[DEBUG] Refresh failed - no access token returned')
-          this.logout()
-          return false
-        }
-      } catch (err) {
-        console.error('[DEBUG] Token refresh error:', err)
-        this.logout()
-        return false
-      }
-    },
-
-    /**
-     * 🚪 Log out user and clear cookies
-     */
-    logout() {
-      console.log('[DEBUG] Logging out user')
-      this.user = null
-      this.token = null
-      this.refreshToken = null
-      this.clearErrors()
-
-      useCookie('auth-token').value = null
-      useCookie('refresh-token').value = null
-      useCookie('user-data').value = null
-
-      navigateTo('/login')
-    },
-
-    /**
-     * 💾 Restore user and tokens from cookies
-     */
-    initAuth() {
-      console.log('[DEBUG] Initializing auth from cookies')
-
-      const cookieOpts = {
-        default: () => null,
-        httpOnly: false,
-        secure: false,
-        path: '/'
-      }
-
-      const accessCookie = useCookie<string | null>('auth-token', cookieOpts)
-      const refreshCookie = useCookie<string | null>('refresh-token', cookieOpts)
-      const userCookie = useCookie<string | null>('user-data', cookieOpts)
-
-      console.log('[DEBUG] Cookie check:', {
-        access: !!accessCookie.value,
-        refresh: !!refreshCookie.value,
-        user: !!userCookie.value
-      })
-
-      if (accessCookie.value && userCookie.value) {
-        this.token = accessCookie.value
-        this.refreshToken = refreshCookie.value
-        try {
-          this.user = JSON.parse(userCookie.value)
-          if (this.user) {
-            console.log('[DEBUG] Restored user from cookies:', this.user.email)
-          } else {
-            console.log('[DEBUG] User is null, cannot restore email')
+        if (token && savedUser) {
+          // Cookie exists and we have user data - restore immediately for fast UI
+          try {
+            this.user = JSON.parse(savedUser)
+            this.initialized = true
+            
+            // Validate token in background without blocking initialization
+            // This ensures session persists even if validation fails temporarily
+            this.me().catch(() => {
+              // Only clear if token is truly invalid (handled by API plugin 401 handler)
+              // Don't clear here to avoid logout on network errors
+            })
+          } catch {
+            // If parsing fails, try to fetch from backend
+            try {
+              await this.me()
+              this.initialized = true
+            } catch {
+              // If me() also fails, clear everything
+              this.clear()
+              this.initialized = true
+            }
           }
-        } catch {
-          console.error('[DEBUG] Failed to parse user cookie')
-          this.user = null
+        } else if (token) {
+          // Cookie exists but no saved user - fetch from backend
+          try {
+            await this.me()
+            this.initialized = true
+          } catch {
+            // If me() fails, clear the invalid cookie
+            this.clear()
+            this.initialized = true
+          }
+        } else if (this.mode === 'bearer') {
+          // No cookie, try bearer mode with localStorage
+          const savedAccessToken = localStorage.getItem('accessToken')
+          const savedRefreshToken = localStorage.getItem('refreshToken')
+
+          if (savedAccessToken && savedUser) {
+            this.accessToken = savedAccessToken
+            this.refreshToken = savedRefreshToken || ''
+            try {
+              this.user = JSON.parse(savedUser)
+              this.initialized = true
+              
+              // Validate token in background
+              this.me().catch(() => {
+                // Token validation failed, but don't clear immediately
+                // Let API plugin handle 401 errors
+              })
+            } catch {
+              // Clear invalid data
+              this.clear()
+              this.initialized = true
+            }
+          } else {
+            // No bearer tokens found - only mark as initialized on client
+            if (import.meta.client) {
+              this.initialized = true
+            }
+          }
+        } else {
+          // No token or user found - only mark as initialized on client
+          // On server, we don't have access to localStorage/cookies, so don't mark as initialized
+          if (import.meta.client) {
+            this.initialized = true
+          }
         }
       } else {
-        console.log('[DEBUG] No valid auth cookies found')
+        // Server side - don't mark as initialized since we can't access localStorage/cookies
+        // This will allow client-side initialization to run
+        // Only mark as initialized if we're in bearer mode and have tokens in state
+        if (this.mode === 'bearer' && this.accessToken && this.user) {
+          this.initialized = true
+        }
       }
-
-      console.log('[DEBUG] Final auth state:', {
-        token: !!this.token,
-        refresh: !!this.refreshToken,
-        isLoggedIn: this.isLoggedIn
-      })
     },
 
-    /**
- * 🧾 Register new user
- */
-    async register(payload: { username: string; email: string; password: string, password_confirm: string }) {
-      this.clearErrors()
+    // ---------- Login: Backend returns token which we store in cookie ----------
+    async login(payload: LoginDto) {
+      const nuxtApp = useNuxtApp()
       const config = useRuntimeConfig()
-      const url = `${config.public.apiBase}/api/users/register/client/`
-
+      const baseURL = config.public.apiBase
+      
+      this.loading = true
+      this.authErrors = []
       try {
-        console.log('[DEBUG] Sending registration request to:', url)
-        const data = await $fetch<AuthResponse>(url, {
-          method: 'POST',
-          body: payload
-        })
+        const { remember, ...credentials } = payload
+        // Call login endpoint - backend should return access token
+        const hasApiPlugin = '$api' in nuxtApp && typeof nuxtApp.$api === 'function'
+        const url = hasApiPlugin ? '/api/token/' : `${baseURL}/api/token/`
+        const options = hasApiPlugin 
+          ? { method: 'POST' as const, body: credentials }
+          : { method: 'POST' as const, body: credentials, credentials: 'include' as const, headers: { 'Content-Type': 'application/json' } }
+        
+        const apiCall = hasApiPlugin ? nuxtApp.$api : $fetch
+        const res = await (apiCall as typeof $fetch)<{
+          access: string,
+          refresh?: string,
+          user?: User
+        }>(url, options)
 
-        console.log('[DEBUG] Registration response:', data)
-
-        if (data.errors) {
-          this.setErrors(data.errors)
-          return { success: false }
-        }
-
-        // Some APIs return tokens upon registration
-        if (data.access && data.refresh) {
-          const userInfo = await $fetch<UserResponse>(`${config.public.apiBase}/api/users/me/`, {
-            headers: { Authorization: `Bearer ${data.access}` }
+        // Store token in cookie (client-side cookie, not httpOnly)
+        if (import.meta.client && res.access) {
+          const authCookie = useCookie('auth-token', {
+            maxAge: remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7, // 30 days or 7 days
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
           })
+          authCookie.value = res.access
 
-          this.token = data.access
-          this.refreshToken = data.refresh
-          this.user = userInfo
+          // Store refresh token if provided
+          if (res.refresh) {
+            this.refreshToken = res.refresh
+            localStorage.setItem('refreshToken', res.refresh)
+          }
 
-          const maxAge = 60 * 60 * 24
-          setAuthCookies(data.access, data.refresh, userInfo, maxAge)
-
-          this.setSuccessMessage('Registration successful!')
-          return { success: true }
+          // If user is included in response, use it
+          if (res.user) {
+            this.user = res.user
+            localStorage.setItem('user', JSON.stringify(res.user))
+            this.initialized = true
+          } else {
+            // Otherwise fetch user data
+            await this.me()
+            this.initialized = true
+          }
         }
 
-        // If backend doesn’t return tokens immediately
-        this.setSuccessMessage('Account created successfully. Please log in.')
         return { success: true }
-      } catch (err: any) {
-        console.error('[DEBUG] Registration error:', err)
-        const msg = err?.data?.errors
-          ? err.data.errors
-          : { general: [err.message || 'Registration failed'] }
-        this.setErrors(msg)
-        return { success: false }
+      } catch (error: unknown) {
+        const fallback = 'Login failed'
+        let message = fallback
+        if (typeof error === 'object' && error !== null && 'data' in error) {
+          const data = (error as { data?: { message?: unknown } }).data
+          if (data && typeof data.message === 'string') {
+            message = data.message
+          }
+        }
+        if (import.meta.dev) {
+          console.error('[auth] login failed:', message, error)
+        }
+        this.authErrors = [message]
+        return { success: false, error: message }
+      } finally {
+        this.loading = false
       }
     },
 
-
-    /**
-     * 🧠 Example: request password reset
-     */
-    async forgotPassword(email: string) {
-      this.clearErrors()
+    async register(payload: RegisterDto) {
+      const nuxtApp = useNuxtApp()
+      const config = useRuntimeConfig()
+      const baseURL = config.public.apiBase
+      
+      this.loading = true
+      this.authErrors = []
       try {
-        const data = await $fetch<{ errors?: Record<string, string[]> }>('/api/auth/forgot-password', {
-          method: 'POST',
-          body: { email }
-        })
-        if (data.errors) {
-          this.setErrors(data.errors)
-          return { success: false }
-        }
-        this.setSuccessMessage('Check your inbox for password reset instructions.')
+        const hasApiPlugin = '$api' in nuxtApp && typeof nuxtApp.$api === 'function'
+        const url = hasApiPlugin ? '/api/users/register/' : `${baseURL}/api/users/register/`
+        const options = hasApiPlugin
+          ? { method: 'POST' as const, body: payload }
+          : { method: 'POST' as const, body: payload, credentials: 'include' as const, headers: { 'Content-Type': 'application/json' } }
+        
+        const apiCall = hasApiPlugin ? nuxtApp.$api : $fetch
+        await (apiCall as typeof $fetch)(url, options)
+        // Option A: auto-login after register
+        await this.login({ email: payload.email, password: payload.password })
         return { success: true }
-      } catch (err: any) {
-        this.setErrors({ general: [err.message || 'Failed to send reset email'] })
-        return { success: false }
+      } catch (error: unknown) {
+        const fallback = 'Registration failed'
+        let message = fallback
+        if (typeof error === 'object' && error !== null && 'data' in error) {
+          const data = (error as { data?: { message?: unknown } }).data
+          if (data && typeof data.message === 'string') {
+            message = data.message
+          }
+        }
+        if (import.meta.dev) {
+          console.error('[auth] register failed:', message, error)
+        }
+        this.authErrors = [message]
+        return { success: false, error: message }
+      } finally {
+        this.loading = false
       }
     },
 
-    /**
-     * 🔒 Reset password using token
-     */
-    async resetPassword(token: string, newPassword: string) {
-      this.clearErrors()
+    async logout() {
+      const nuxtApp = useNuxtApp()
+      const config = useRuntimeConfig()
+      const baseURL = config.public.apiBase
       try {
-        const data = await $fetch<{ errors?: Record<string, string[]> }>('/api/auth/reset-password', {
-          method: 'POST',
-          body: { token, newPassword }
-        })
-        if (data.errors) {
-          this.setErrors(data.errors)
-          return { success: false }
+        const hasApiPlugin = '$api' in nuxtApp && typeof nuxtApp.$api === 'function'
+        const url = hasApiPlugin ? '/auth/logout' : `${baseURL}/auth/logout`
+        const options = hasApiPlugin
+          ? { method: 'POST' as const }
+          : { method: 'POST' as const, credentials: 'include' as const, headers: { 'Content-Type': 'application/json' } }
+        
+        const apiCall = hasApiPlugin ? nuxtApp.$api : $fetch
+        await (apiCall as typeof $fetch)(url, options)
+      } catch {
+        // ignore
+      }
+      this.clear()
+    },
+
+    async me() {
+      const nuxtApp = useNuxtApp()
+      const config = useRuntimeConfig()
+      const baseURL = config.public.apiBase
+      try {
+        const hasApiPlugin = '$api' in nuxtApp && typeof nuxtApp.$api === 'function'
+        const url = hasApiPlugin ? '/api/users/me/' : `${baseURL}/api/users/me/`
+        const token = this.token
+        const options = hasApiPlugin
+          ? { 
+              method: 'GET' as const,
+              headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+              }
+            }
+          : { 
+              method: 'GET' as const, 
+              credentials: 'include' as const, 
+              headers: { 
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+              } 
+            }
+        
+        const apiCall = hasApiPlugin ? nuxtApp.$api : $fetch
+        const user = await (apiCall as typeof $fetch)<User>(url, options)
+        this.user = user
+        this.initialized = true
+        
+        // Persist user to localStorage
+        if (import.meta.client) {
+          localStorage.setItem('user', JSON.stringify(user))
         }
-        this.setSuccessMessage('Password reset successful. You can now log in.')
-        return { success: true }
-      } catch (err: any) {
-        this.setErrors({ general: [err.message || 'Password reset failed'] })
-        return { success: false }
+      } catch (error: any) {
+        // Only clear user if we get a 401 (unauthorized) - token is invalid
+        // Don't clear on network errors or other issues
+        if (error?.status === 401 || error?.response?.status === 401) {
+          this.user = null
+          // Clear stale data
+          if (import.meta.client) {
+            localStorage.removeItem('user')
+          }
+        }
+        // Re-throw error so caller can handle it
+        throw error
+      }
+    },
+
+    async refreshTokenFlow() {
+      const nuxtApp = useNuxtApp()
+      const config = useRuntimeConfig()
+      const baseURL = config.public.apiBase
+      if (this.mode !== 'bearer') return
+      if (!this.refreshToken) throw new Error('No refresh token')
+      
+      const hasApiPlugin = '$api' in nuxtApp && typeof nuxtApp.$api === 'function'
+      const url = hasApiPlugin ? '/auth/refresh' : `${baseURL}/auth/refresh`
+      const options = hasApiPlugin
+        ? { method: 'POST' as const, body: { refreshToken: this.refreshToken } }
+        : { method: 'POST' as const, body: { refreshToken: this.refreshToken }, credentials: 'include' as const, headers: { 'Content-Type': 'application/json' } }
+      
+      const apiCall = hasApiPlugin ? nuxtApp.$api : $fetch
+      const res = await (apiCall as typeof $fetch)<{
+        accessToken: string,
+        refreshToken?: string
+      }>(url, options)
+      this.accessToken = res.accessToken
+      if (res.refreshToken) this.refreshToken = res.refreshToken
+
+      // Update localStorage
+      if (import.meta.client) {
+        localStorage.setItem('accessToken', res.accessToken)
+        if (res.refreshToken) {
+          localStorage.setItem('refreshToken', res.refreshToken)
+        }
+      }
+    },
+
+    clear() {
+      this.user = null
+      this.accessToken = ''
+      this.refreshToken = ''
+      this.authErrors = []
+      this.initialized = false // Reset so auth can be re-initialized if needed
+
+      // Clear cookie and localStorage
+      if (import.meta.client) {
+        // Remove auth token cookie
+        const authCookie = useCookie('auth-token')
+        authCookie.value = null
+
+        // Clear localStorage
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('user')
       }
     }
-  }
+  },
 })

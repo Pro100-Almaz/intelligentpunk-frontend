@@ -64,6 +64,13 @@ export default defineNuxtConfig({
       stripePriceEnterprise: process.env.NUXT_PUBLIC_STRIPE_PRICE_ENTERPRISE
     }
   },
-
+  typescript: {
+    strict: true,
+    tsConfig: {
+      compilerOptions: {
+        types: ['@pinia/nuxt', 'vue/macros-global'],
+      },
+    },
+  },
   
 })

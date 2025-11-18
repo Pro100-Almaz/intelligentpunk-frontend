@@ -4,22 +4,13 @@ import { sub } from 'date-fns'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Period, Range } from '~/types'
 import { useDashboard } from '~/composables/useDashboard'
-import HomeStats from '~/components/dashboard/HomeStats.vue'
-import HomeChart from '~/components/dashboard/HomeChart.vue'
-import HomeSales from '~/components/dashboard/HomeSales.vue'
-import WelcomeCard from '~/components/dashboard/WelcomeCard.vue'
-import PointsBalanceCard from '~/components/dashboard/PointsBalanceCard.vue'
-import SubscriptionCard from '~/components/dashboard/SubscriptionCard.vue'
-import AiModelCard from '~/components/dashboard/AiModelCard.vue'
-import UsageOverviewCard from '~/components/dashboard/UsageOverviewCard.vue'
-import AiToolsUsageCard from '~/components/dashboard/AiToolsUsageCard.vue'
-import SuggestedAiCard from '~/components/dashboard/SuggestedAiCard.vue'
-import QuickAccessCard from '~/components/dashboard/QuickAccessCard.vue'
-import RecentActivityCard from '~/components/dashboard/RecentActivityCard.vue'
-import LatestProjectsCard from '~/components/dashboard/LatestProjectsCard.vue'
-
+import {Pagination} from "swiper/modules";
+import SectionTitle from "~/components/marketplace/SectionTitle.vue";
+import {Swiper, SwiperSlide} from "swiper/vue";
+import ToolCard from "~/components/marketplace/ToolCard.vue";
 
 const user = useAuthStore()
+const router = useRouter()
 
 
 definePageMeta({
@@ -134,10 +125,18 @@ async function fetchSubscription() {
   }
 }
 
-onMounted(() => {
-  fetchPointsFromBackend()
-  fetchSubscription()
-  getBalance()
+onMounted(async () => {
+  // Ensure auth is initialized before making API calls
+  if (import.meta.client && !auth.initialized) {
+    await auth.initAuth()
+  }
+  
+  // Only make API calls if user is authenticated
+  if (auth.isLoggedIn) {
+    fetchPointsFromBackend()
+    fetchSubscription()
+    getBalance()
+  }
 })
 
 const aiModels = [
@@ -339,6 +338,30 @@ const latestProjects = [
   }
 ]
 
+const projectMenuItems = [
+  [{
+    label: 'Edit Project',
+    icon: 'i-heroicons-pencil',
+    click: () => console.log('Edit project')
+  }, {
+    label: 'Duplicate',
+    icon: 'i-heroicons-document-duplicate',
+    click: () => console.log('Duplicate project')
+  }, {
+    label: 'Share',
+    icon: 'i-heroicons-share',
+    click: () => console.log('Share project')
+  }], [{
+    label: 'Archive',
+    icon: 'i-heroicons-archive-box',
+    click: () => console.log('Archive project')
+  }, {
+    label: 'Delete',
+    icon: 'i-heroicons-trash',
+    click: () => console.log('Delete project')
+  }]
+]
+
 </script>
 
 <template>
@@ -434,66 +457,320 @@ const latestProjects = [
     </template>
 
     <template #body>
-      <div class="max-w-7xl mx-auto space-y-6 p-6">
+      <div class="space-y-6 p-6">
+        <!-- Top Cards Row -->
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-          <WelcomeCard
-            class="md:col-span-4 bg-white dark:bg-gray-900"
-            :user="user.user?.first_name"
-            :tip="tipOfTheDay"
-          />
-
-          <PointsBalanceCard
-            class="md:col-span-3"
-            :points="pointsData"
-          />
-
-          <SubscriptionCard
-            class="md:col-span-5"
-            :subscription="subscriptionData"
-          />
-        </div>
-        
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <AiModelCard 
-            v-for="model in aiModels" 
-            :key="model.id" 
-            :model="model" 
-          />
-        </div>
-        
-        <div class="grid grid-cols-1 gap-6">
-          <UsageOverviewCard
-            :usage="{
-              tool: { icon: '...', name: 'Typli.io', description: 'Ai text generator' },
-              pointsUsed: 2345,
-              chartData: [120, 180, 90, 250, 400, 200, 350, 150],
-              totalUsed: 4000,
-              toolsUsed: 8
-            }"
-            :tools="[
-              { id: 1, icon: '...', name: 'Typli.io', description: 'Ai text generator', pointsUsed: 204 },
-              { id: 2, icon: '...', name: 'Replika', description: 'Ai text generator', pointsUsed: 204 },
-              // etc
-            ]"
-          />
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-7 gap-6">
-          <div class="lg:col-span-3">
-            <SuggestedAiCard :suggestions="suggestedAi" />
-          </div>
-          <div class="lg:col-span-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <QuickAccessCard 
-                v-for="item in quickAccess" 
-                :key="item.id" 
-                :item="item" 
+          <!-- Welcome Card -->
+          <UCard class="md:col-span-4 overflow-hidden rounded-xl h-full bg-white dark:bg-gray-900">
+            <div class="px-6 py-4 flex items-center space-x-4">
+              <UAvatar 
+                :src="user.user?.avatar || undefined"
+                :alt="user.user?.name || user.user?.username || 'User'"
+                size="3xl"
               />
+              <div>
+                <div class="text-gray-500 text-sm">Welcome back,</div>
+                <div class="text-xl font-bold text-gray-900 dark:text-white">
+                  {{ user.user?.name || user.user?.username || 'User' }}
+                </div>
+              </div>
             </div>
-            
+            <div class="px-6 py-5 border-t border-gray-200 dark:border-gray-700">
+              <div class="flex items-center text-red-500 mb-2">
+                <UIcon name="i-lucide-brain" class="size-5 mr-2" />
+                <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Tip of the Day</span>
+              </div>
+              <p class="text-gray-900 dark:text-white">
+                "{{ tipOfTheDay.text }}"
+              </p>
+            </div>
+          </UCard>
+
+          <!-- Points Balance Card -->
+          <UCard class="md:col-span-3 h-full flex flex-col">
+            <div class="flex-1">
+              <div class="text-gray-500 mb-1 text-sm">Points Balance</div>
+              <div class="text-4xl font-bold text-gray-900 dark:text-white mb-1">
+                {{ pointsData.total.toLocaleString() }}
+              </div>
+              <div class="text-sm text-red-500 mb-6">
+                {{ pointsData.expiring.amount }} pts expiring in {{ pointsData.expiring.days }} days
+              </div>
+            </div>
+            <div class="mt-auto pt-4 pb-6">
+              <UButton 
+                color="success" 
+                @click="router.push('/subscription')"
+              >
+                Buy More Points
+              </UButton>
+            </div>
+          </UCard>
+
+          <!-- Subscription Card -->
+          <UCard class="md:col-span-5 bg-white dark:bg-gray-900 rounded-xl">
+            <div class="flex items-center">
+              <div class="flex-1 pr-4">
+                <div class="text-gray-500 text-sm">Subscription status</div>
+                <div class="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+                  {{ subscriptionData.type }}
+                </div>
+
+                <div class="mt-4 space-y-2">
+                  <div class="flex items-center">
+                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                    <span class="text-gray-600 dark:text-gray-400 text-sm">
+                      {{ subscriptionData.daysCompleted }} days trail complete
+                    </span>
+                  </div>
+                  <div class="flex items-center">
+                    <span class="w-3 h-3 bg-gray-300 dark:bg-gray-600 rounded-full mr-2"></span>
+                    <span class="text-gray-600 dark:text-gray-400 text-sm">
+                      {{ subscriptionData.daysLeft }} days trail left
+                    </span>
+                  </div>
+                  <div class="mt-6">
+                    <UButton
+                      variant="link"
+                      color="neutral"
+                      class="px-0 hover:underline"
+                      trailing-icon="i-lucide-arrow-right"
+                    >
+                      Renew now
+                    </UButton>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex-shrink-0">
+                <div class="relative w-36 h-36">
+                  <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" stroke-width="10" />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke="#86efac"
+                      stroke-width="10"
+                      stroke-linecap="round"
+                      stroke-dasharray="282.7"
+                      :stroke-dashoffset="282.7 * (1 - subscriptionData.progress / 100)"
+                      transform="rotate(-90 50 50)"
+                    />
+                  </svg>
+                  <div class="absolute inset-0 flex flex-col items-center justify-center">
+                    <div class="text-2xl font-bold text-red-500">
+                      {{ subscriptionData.progress }}%
+                    </div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Completed</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </UCard>
+        </div>
+
+        <!-- AI Models Carousel -->
+        <div class="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 scrollbar-hide">
+          <UCard
+            v-for="item in aiModels"
+            :key="item.id"
+            class="relative overflow-hidden max-w-[200px] min-w-[200px] flex-shrink-0 snap-center flex flex-col"
+          >
+            <div v-if="item.discount" class="absolute top-0 left-0 bg-rose-500 text-white text-xs px-2 py-1 rounded-br-md z-10">
+              {{ item.discount }}
+            </div>
+
+            <div class="flex flex-col items-center h-full py-4 flex-1">
+              <div class="mb-2">
+                <UAvatar :src="item.icon" :alt="`${item.name} logo`" size="lg" />
+              </div>
+              <h3 class="text-lg font-bold mb-1 text-gray-900 dark:text-white">{{ item.name }}</h3>
+              <p class="text-sm text-gray-500 text-center mb-4 px-2 flex-1">{{ item.description }}</p>
+
+              <div class="mt-auto">
+                <UButton 
+                  size="sm" 
+                  :color="item.discount ? 'success' : 'neutral'"
+                  :variant="item.discount ? 'solid' : 'outline'"
+                >
+                  Try Now
+                </UButton>
+              </div>
+            </div>
+          </UCard>
+        </div>
+
+
+
+        <!-- Usage Overview Section -->
+        <div class="flex flex-col md:flex-row gap-6">
+          <UCard class="flex-1">
+            <h2 class="text-xl font-medium mb-6">Usage Overview</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="md:col-span-1 flex flex-col justify-between">
+                <div class="mb-6">
+                  <div class="flex items-center mb-4">
+                    <UAvatar :src="usageData.tool.icon" :alt="`${usageData.tool.name} logo`" size="md" class="mr-3" />
+                    <div>
+                      <h3 class="font-bold text-lg">{{ usageData.tool.name }}</h3>
+                      <p class="text-sm text-gray-400">{{ usageData.tool.description }}</p>
+                    </div>
+                  </div>
+
+                  <div class="mb-6">
+                    <div class="text-gray-500 text-sm">Points used</div>
+                    <div class="text-3xl font-bold">{{ usageData.pointsUsed.toLocaleString() }}</div>
+                  </div>
+                </div>
+
+                <div class="space-y-3">
+                  <div>
+                    <div class="text-sm text-gray-500">Total Used:</div>
+                    <div class="font-bold">{{ usageData.totalUsed }} pts</div>
+                  </div>
+                  <div>
+                    <div class="text-sm text-gray-500">Tools Used:</div>
+                    <div class="font-bold">{{ usageData.toolsUsed }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="md:col-span-2">
+                <div class="text-center text-gray-400 py-20">
+                  Chart visualization area
+                </div>
+              </div>
+            </div>
+          </UCard>
+
+          <UCard class="w-full md:w-80">
+            <div class="space-y-4">
+              <div v-for="tool in aiToolsUsage" :key="tool.id" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <UAvatar :src="tool.icon" :alt="`${tool.name} logo`" size="sm" class="mr-3" />
+                    <div>
+                      <h3 class="font-bold">{{ tool.name }}</h3>
+                      <p class="text-xs text-gray-500">{{ tool.description }}</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div class="text-sm font-bold">{{ tool.pointsUsed }}</div>
+                    <div class="text-xs text-gray-500">pts Used</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </UCard>
+        </div>
+
+        <!-- Bottom Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-7 gap-6">
+          <!-- Suggested AI -->
+          <div class="lg:col-span-3">
+            <UCard class="h-full">
+              <h2 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4">Suggested AI based on your chat history</h2>
+
+              <div class="space-y-4">
+                <UCard v-for="item in suggestedAi" :key="item.id" class="bg-gray-50 dark:bg-gray-800">
+                  <div class="grid grid-cols-6 gap-4 items-center">
+                    <div class="col-span-1 flex justify-center">
+                      <UAvatar :src="item.icon" :alt="`${item.name} logo`" size="3xl" />
+                    </div>
+
+                    <div class="col-span-3 flex flex-col space-y-2">
+                      <h3 class="font-bold text-sm">{{ item.name }}</h3>
+                      <p class="text-xs text-gray-500">{{ item.description }}</p>
+                      <UButton size="sm" class="w-fit">
+                        Try Now
+                      </UButton>
+                    </div>
+
+                    <div class="col-span-2 text-right">
+                      <div class="font-bold text-lg">{{ item.points.toLocaleString() }}</div>
+                      <div class="text-xs text-gray-500">pts</div>
+                    </div>
+                  </div>
+                </UCard>
+              </div>
+            </UCard>
+          </div>
+
+          <!-- Right Side -->
+          <div class="lg:col-span-4">
+            <!-- Quick Access -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <UCard
+                v-for="item in quickAccess"
+                :key="item.id"
+                class="h-full"
+                :style="{ backgroundColor: item.color }"
+              >
+                <div class="flex flex-col items-center justify-center py-4">
+                  <UIcon :name="item.icon" class="text-4xl mb-2" />
+                  <div class="font-medium">{{ item.name }}</div>
+                </div>
+              </UCard>
+            </div>
+
+            <!-- Recent Activity & Latest Projects -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <RecentActivityCard :activities="recentActivities" />
-              <LatestProjectsCard :projects="latestProjects" />
+              <!-- Recent Activity -->
+              <UCard class="h-full">
+                <div class="flex justify-between items-center mb-4">
+                  <h2 class="text-xl font-medium text-gray-600 dark:text-gray-400">Recent Activity</h2>
+                </div>
+
+                <div class="space-y-4">
+                  <div v-for="activity in recentActivities" :key="activity.id" class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3 last:border-0">
+                    <div class="flex items-center">
+                      <UAvatar :src="activity.icon" size="sm" class="mr-3" />
+                      <div>
+                        <div class="font-medium">{{ activity.type }}</div>
+                        <div class="text-xs text-gray-500">{{ activity.time }}</div>
+                      </div>
+                    </div>
+                    <div class="text-sm text-gray-500">{{ activity.timeAgo }}</div>
+                  </div>
+                </div>
+              </UCard>
+
+              <!-- Latest Projects -->
+              <UCard>
+                <div class="mb-3 flex justify-between items-center">
+                  <h2 class="text-xl font-medium text-gray-400">Latest Usage</h2>
+                  <button class="text-black dark:text-white text-sm font-medium underline hover:no-underline">
+                    View all
+                  </button>
+                </div>
+
+                <div v-for="project in latestProjects" :key="project.id" class="bg-white dark:bg-gray-900 rounded-lg p-2 mb-2 last:mb-0 w-full">
+                  <div class="grid grid-cols-6 gap-2 items-center">
+                    <div class="col-span-1 flex justify-center">
+                      <UAvatar :src="project.icon" size="lg" />
+                    </div>
+
+                    <div class="col-span-4 flex flex-col space-y-1">
+                      <div class="font-bold text-sm">{{ project.title }}</div>
+                      <div class="text-xs text-gray-500">{{ project.time }}</div>
+                      <UButton class="w-fit text-xs">
+                        Go to studio
+                      </UButton>
+                    </div>
+
+                    <div class="col-span-1 flex justify-end">
+                      <UDropdownMenu :items="projectMenuItems">
+                        <UButton color="neutral" variant="ghost" size="sm" square>
+                          <UIcon name="i-heroicons-ellipsis-vertical" class="size-4" />
+                        </UButton>
+                      </UDropdownMenu>
+                    </div>
+                  </div>
+                </div>
+              </UCard>
             </div>
           </div>
         </div>
